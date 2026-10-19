@@ -231,7 +231,7 @@ export const ScrollArea = observer(forwardRef<ScrollAreaHandles, IProps>(({
       }}
       className={`${className} overflow-y-scroll overflow-x-hidden ${isPc ? '' : 'scrollbar-hide'} scroll-smooth scroll-area`}
     >
-      {fixMobileTopBar && !isPc && <div className="h-16"></div>}
+      {fixMobileTopBar && !isPc && <div className="blinko-mobile-header-spacer" />}
       {/* Pull to refresh indicator */}
       {showRefreshIndicator && (
         <div

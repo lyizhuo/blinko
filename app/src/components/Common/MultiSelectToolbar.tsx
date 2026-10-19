@@ -18,7 +18,10 @@ export const MultiSelectToolbar = ({ show, actions, onClose }: MultiSelectToolba
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+    <div
+      className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50"
+      style={{ bottom: 'calc(1rem + var(--safe-area-inset-bottom, 0px))' }}
+    >
       <div className="bg-content1 rounded-2xl shadow-lg px-4 py-2 flex items-center gap-2 border-2 border-primary">
         {actions.map((action, index) => (
           <Button

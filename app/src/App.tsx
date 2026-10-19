@@ -21,6 +21,7 @@ import { useAndroidShortcuts } from '@/lib/hooks';
 import { useQuickaiHotkey } from '@/hooks/useQuickaiHotkey';
 import { useInitialHotkeySetup } from '@/hooks/useInitialHotkeySetup';
 import { isInTauri, isDesktop } from "@/lib/tauriHelper";
+import { applySafeAreaInsets } from "@/lib/safeArea";
 import { listen } from "@tauri-apps/api/event";
 import QuickNotePage from "./pages/quicknote";
 import QuickAIPage from "./pages/quickai";
@@ -268,6 +269,18 @@ function App() {
 
   useEffect(() => {
     RootStore.Get(PluginManagerStore).initInstalledPlugins();
+  }, []);
+
+  // Keep the CSS safe-area variables in sync with the system bars (Android edge-to-edge).
+  useEffect(() => {
+    applySafeAreaInsets();
+    const handleLayoutChange = () => applySafeAreaInsets();
+    window.addEventListener('resize', handleLayoutChange);
+    window.addEventListener('orientationchange', handleLayoutChange);
+    return () => {
+      window.removeEventListener('resize', handleLayoutChange);
+      window.removeEventListener('orientationchange', handleLayoutChange);
+    };
   }, []);
 
   return (

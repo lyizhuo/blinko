@@ -1,4 +1,4 @@
-const COMMANDS: &[&str] = &["setcolor"];
+const COMMANDS: &[&str] = &["setcolor", "get_safe_area_insets"];
 
 fn main() {
   tauri_plugin::Builder::new(COMMANDS)

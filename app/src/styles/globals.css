@@ -1,6 +1,27 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+/*
+ * The Android activity draws edge-to-edge. Recent WebViews expose the system
+ * bar insets through env(safe-area-inset-*); the Android bridge overrides these
+ * with measured values (set on documentElement) for WebViews that report 0.
+ */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+}
+
+/*
+ * Offsets page content below the fixed mobile header: the header is 3.5rem tall
+ * plus the status bar inset, so every page that renders its own top bar must use
+ * this instead of a bare `h-16`.
+ */
+.blinko-mobile-header-spacer {
+  height: calc(4rem + var(--safe-area-inset-top, 0px));
+}
+
 .bm-burger-button {
   display: none;
 }

@@ -30,4 +30,18 @@ class BlinkoPlugin(private val activity: Activity): Plugin(activity) {
         implementation.openAppSettings(activity)
         invoke.resolve()
     }
+
+    @Command
+    fun getSafeAreaInsets(invoke: Invoke) {
+        // Window insets must be read on the UI thread.
+        activity.runOnUiThread {
+            val insets = implementation.getSafeAreaInsets(activity)
+            val result = JSObject()
+            result.put("top", insets["top"])
+            result.put("right", insets["right"])
+            result.put("bottom", insets["bottom"])
+            result.put("left", insets["left"])
+            invoke.resolve(result)
+        }
+    }
 }

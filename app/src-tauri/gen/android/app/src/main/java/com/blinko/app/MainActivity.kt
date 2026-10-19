@@ -7,6 +7,7 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.enableEdgeToEdge
 import org.json.JSONObject
 import com.plugin.blinko.Blinko
 
@@ -16,6 +17,9 @@ class MainActivity : TauriActivity() {
     private val blinko = Blinko()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Draw behind the system bars. Must run before super.onCreate so the
+        // window is already laid out edge-to-edge when the WebView attaches.
+        enableEdgeToEdge()
         // Apply saved theme before super.onCreate to prevent flash
         blinko.applyStartupTheme(this)
         super.onCreate(savedInstanceState)

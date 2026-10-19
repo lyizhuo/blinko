@@ -11,5 +11,8 @@ async function setStatusBarColor(hexColor) {
 async function openAppSettings() {
     await invoke('plugin:blinko|open_app_settings');
 }
+async function getSafeAreaInsets() {
+    return await invoke('plugin:blinko|get_safe_area_insets');
+}
 
-export { openAppSettings, setStatusBarColor };
+export { getSafeAreaInsets, openAppSettings, setStatusBarColor };

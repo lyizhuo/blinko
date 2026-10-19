@@ -179,7 +179,10 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
         top: 0, 
         left: 0, 
         right: 0, 
-        bottom: 0
+        bottom: 0,
+        // Covers the whole window (the layout header is hidden here), so it has to
+        // clear the status bar itself. The bottom toolbar handles its own inset.
+        paddingTop: 'var(--safe-area-inset-top, 0px)'
       }}
     >
       <div className="h-full flex">
@@ -275,7 +278,7 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
 
           {/* Bottom toolbar with back button (Mobile only) */}
           {!isPc && (
-            <div className="flex items-center justify-between py-3 px-2 flex-shrink-0 border-t border-border bg-background" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="flex items-center justify-between py-3 px-2 flex-shrink-0 border-t border-border bg-background" style={{ paddingBottom: 'var(--safe-area-inset-bottom, 0px)' }}>
               <Button
                 isIconOnly
                 variant="light"

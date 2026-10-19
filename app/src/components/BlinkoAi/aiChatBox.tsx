@@ -453,7 +453,7 @@ export const BlinkoChatBox = observer(({ shareMode = false }: { shareMode?: bool
     >
 
       {/* Mobile top spacing */}
-      {isMobile && <div className="h-16"></div>}
+      {isMobile && <div className="blinko-mobile-header-spacer"></div>}
 
       <div className="flex flex-col p-0 md:p-2 relative min-h-full w-[95%] md:w-[78%] mx-auto">
         {/* Flex spacer */}

@@ -37,7 +37,7 @@ export const MobileNavBar = observer(({ onItemClick }: MobileNavBarProps) => {
   return (
     <motion.div
       className="blinko-bottom-bar h-[60px] flex w-full px-3 py-2 gap-1 bg-background block md:hidden overflow-hidden fixed bottom-0 z-50"
-      animate={{ y: isVisible ? 0 : 100 }}
+      animate={{ y: isVisible ? 0 : '100%' }}
       transition={{
         type: "spring",
         damping: 25,
@@ -46,6 +46,9 @@ export const MobileNavBar = observer(({ onItemClick }: MobileNavBarProps) => {
         bounce: 0.3
       }}
       style={{
+        // Grow into the navigation bar / gesture area instead of sitting under it.
+        height: 'calc(60px + var(--safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(var(--safe-area-inset-bottom, 0px) + 0.5rem)',
         background: getFixedHeaderBackground(),
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)'
