@@ -245,6 +245,7 @@ export class AiService {
     withOnline = false,
     systemPrompt,
     ctx,
+    conversationId,
   }: {
     question: string;
     conversations: CoreMessage[];
@@ -253,6 +254,7 @@ export class AiService {
     withOnline?: boolean;
     systemPrompt?: string;
     ctx: Context;
+    conversationId?: number;
   }) {
     try {
       console.log('completions');
@@ -293,7 +295,11 @@ export class AiService {
         withOnlineSearch: withOnline,
         extraInstructions: contextParts.join('\n\n'),
       });
-      const result = await agent.stream(cleanedConversations, { runtimeContext });
+      const sessionHeaders = await AiModelFactory.opencodeChatHeaders(conversationId);
+      const result = await agent.stream(cleanedConversations, {
+        runtimeContext,
+        ...(sessionHeaders ? { headers: sessionHeaders } : {})
+      });
       return { result, notes: ragNote };
     } catch (error) {
       console.log(error);

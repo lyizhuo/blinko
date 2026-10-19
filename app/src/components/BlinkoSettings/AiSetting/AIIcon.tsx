@@ -46,6 +46,8 @@ const PROVIDER_ICONS: Record<string, React.ComponentType<any>> = {
   voyageai: Voyage.Color,
   voyage: Voyage.Color,
   litellm: OpenRouter,
+  // @lobehub/icons has no OpenCode mark yet; fall back to a generic AI icon.
+  opencodego: ({ className }: { className?: string }) => <Icon icon="hugeicons:ai-magic" className={className} />,
   custom: OpenAI,
 };
 

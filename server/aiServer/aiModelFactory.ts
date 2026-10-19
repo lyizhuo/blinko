@@ -25,6 +25,7 @@ import { PinoLogger } from '@mastra/loggers';
 import { ModelCapabilities } from './types';
 import { aiModels } from '@shared/index';
 import { MastraVoice } from '@mastra/core/voice';
+import { OPENCODE_GO_PROVIDER, opencodeGoConversationHeader } from './opencodeGo';
 
 export class AiModelFactory {
   static async queryAndDeleteVectorById(targetId: number) {
@@ -222,6 +223,20 @@ export class AiModelFactory {
     });
   }
 
+  /**
+   * OpenCode Go routes each chat through a stable session id. Only the opencodego
+   * provider gets this per-conversation header; every other provider returns undefined
+   * so no correlation id leaks to other vendors.
+   */
+  static async opencodeChatHeaders(conversationId?: number): Promise<Record<string, string> | undefined> {
+    if (!conversationId) return undefined;
+    const globalConfig = await AiModelFactory.globalConfig();
+    if (!globalConfig.mainModelId) return undefined;
+    const mainModel = await AiModelFactory.getAiModel(globalConfig.mainModelId);
+    if (mainModel?.provider.provider?.toLowerCase() !== OPENCODE_GO_PROVIDER) return undefined;
+    return opencodeGoConversationHeader(conversationId, mainModel.provider.apiKey);
+  }
+
   static async getAiModelsByCapability(capability: string) {
     return await prisma.aiModels.findMany({
       where: {
@@ -277,6 +292,7 @@ export class AiModelFactory {
       apiKey: mainModel.provider.apiKey,
       baseURL: mainModel.provider.baseURL,
       modelKey: mainModel.modelKey,
+      providerId: mainModel.provider.id,
       apiVersion: (mainModel.provider.config as any)?.apiVersion
     };
 

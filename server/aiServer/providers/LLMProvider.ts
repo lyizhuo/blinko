@@ -8,12 +8,14 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { createXai } from '@ai-sdk/xai';
 import { createAzure } from '@ai-sdk/azure';
 import { BaseProvider } from './BaseProvider';
+import { OPENCODE_GO_BASE_URL, opencodeGoDefaultHeaders } from '../opencodeGo';
 
 interface LLMConfig {
   provider: string;
   apiKey?: any;
   baseURL?: any;
   modelKey: string;
+  providerId?: number;
   apiVersion?: any;
 }
 
@@ -87,6 +89,14 @@ export class LLMProvider extends BaseProvider {
         return createOpenAI({
           apiKey: config.apiKey,
           baseURL: config.baseURL || 'http://localhost:4000/v1',
+          fetch: this.proxiedFetch
+        }).languageModel(config.modelKey);
+
+      case 'opencodego':
+        return createOpenAI({
+          apiKey: config.apiKey,
+          baseURL: config.baseURL || OPENCODE_GO_BASE_URL,
+          headers: opencodeGoDefaultHeaders(config.providerId, config.apiKey),
           fetch: this.proxiedFetch
         }).languageModel(config.modelKey);
 

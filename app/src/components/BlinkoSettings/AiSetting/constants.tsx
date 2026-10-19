@@ -156,5 +156,15 @@ export const PROVIDER_TEMPLATES = [
     docs: 'https://docs.litellm.ai/docs',
     icon: 'litellm',
     description: 'AI gateway proxy - access 100+ LLM providers through a single endpoint'
+  },
+  {
+    value: 'opencodego',
+    label: 'OpenCode Go',
+    defaultName: 'OpenCode Go',
+    defaultBaseURL: 'https://opencode.ai/inference/go/openai/v1',
+    website: 'https://opencode.ai',
+    docs: 'https://opencode.ai/docs/go',
+    icon: 'opencodego',
+    description: 'OpenCode Go subscription gateway - GLM, Kimi, Qwen, DeepSeek, MiniMax and more'
   }
 ];

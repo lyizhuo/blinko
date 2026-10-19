@@ -135,6 +135,7 @@ export class AiStore implements Store {
             withRAG: this.withRAG.value ?? false,
             withTools: this.withTools.value ?? false,
             withOnline: this.withOnline.value ?? false,
+            conversationId: this.currentConversationId,
           },
           { signal: this.aiChatabortController.signal },
         );

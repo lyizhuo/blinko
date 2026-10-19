@@ -11,6 +11,7 @@ import { ModelCapabilities } from '@server/aiServer/types';
 import { aiProviders, aiModels } from '@shared/lib/prismaZodType';
 import { fetchWithProxy } from '@server/lib/proxy';
 import { inferModelCapabilities } from '@shared/lib/modelTemplates';
+import { OPENCODE_GO_MODELS_URL, opencodeGoDefaultHeaders } from '@server/aiServer/opencodeGo';
 
 export const aiRouter = router({
   embeddingUpsert: authProcedure
@@ -68,11 +69,12 @@ export const aiRouter = router({
       withOnline: z.boolean().optional(),
       withRAG: z.boolean().optional(),
       conversations: z.array(z.object({ role: z.string(), content: z.string() })),
-      systemPrompt: z.string().optional()
+      systemPrompt: z.string().optional(),
+      conversationId: z.number().optional()
     }))
     .mutation(async function* ({ input, ctx }) {
       try {
-        const { question, conversations, withTools = false, withOnline = false, withRAG = true, systemPrompt } = input
+        const { question, conversations, withTools = false, withOnline = false, withRAG = true, systemPrompt, conversationId } = input
         let _conversations = conversations as CoreMessage[]
         const { result: responseStream, notes } = await AiService.completions({
           question,
@@ -81,7 +83,8 @@ export const aiRouter = router({
           withTools,
           withOnline,
           withRAG,
-          systemPrompt
+          systemPrompt,
+          conversationId
         })
         yield { notes }
         for await (const chunk of responseStream.fullStream) {
@@ -296,6 +299,7 @@ export const aiRouter = router({
               apiKey: provider.apiKey,
               baseURL: provider.baseURL,
               modelKey,
+              providerId: provider.id,
               apiVersion: (provider.config as any)?.apiVersion
             });
 
@@ -687,6 +691,32 @@ export const aiRouter = router({
               description: '',
               capabilities: inferModelCapabilities(model.id)
             })) || [];
+            break;
+          }
+
+          case 'opencodego': {
+            // The Go model catalog lives outside the OpenAI-compatible base URL.
+            const response = await proxiedFetch(OPENCODE_GO_MODELS_URL, {
+              headers: opencodeGoDefaultHeaders(provider.id, provider.apiKey)
+            });
+            const payload: unknown = await response.json();
+            const models: unknown[] =
+              payload && typeof payload === 'object' && 'data' in payload && Array.isArray(payload.data)
+                ? payload.data
+                : [];
+            modelList = models
+              .map((model) =>
+                model && typeof model === 'object' && 'id' in model && typeof model.id === 'string'
+                  ? model.id
+                  : null
+              )
+              .filter((id): id is string => id !== null)
+              .map((id) => ({
+                id,
+                name: id,
+                description: '',
+                capabilities: inferModelCapabilities(id)
+              }));
             break;
           }
 
