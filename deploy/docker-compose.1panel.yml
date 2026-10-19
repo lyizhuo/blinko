@@ -1,0 +1,36 @@
+# 适用于服务器上已有反向代理（1Panel / Nginx / Traefik 等，80/443 已被占用）的场景。
+# 用法：curl 此文件到服务器后改名为 docker-compose.yml（或 docker compose -f 本文件 up -d），
+# 然后在现有反代上把域名 proxy_pass 到 http://127.0.0.1:1111，HTTPS 由现有反代负责。
+networks:
+  blinko-network:
+    driver: bridge
+
+services:
+  blinko-website:
+    image: ghcr.io/lyizhuo/blinko:latest
+    environment:
+      NODE_ENV: production
+      NEXTAUTH_URL: https://${DOMAIN}
+      NEXT_PUBLIC_BASE_URL: https://${DOMAIN}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - blinko-data:/app/.blinko
+    ports:
+      - "127.0.0.1:1111:1111"
+    restart: always
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:1111/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - blinko-network
+
+volumes:
+  blinko-data:
