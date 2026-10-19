@@ -18,8 +18,10 @@ ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
 # Copy dependency manifests first: keeps `bun install` cached across source-only changes.
 COPY package.json bun.lock ./
 COPY app/package.json ./app/
-# app depends on this one through `file:./tauri-plugin-blinko`
-COPY app/tauri-plugin-blinko/package.json ./app/tauri-plugin-blinko/
+# app depends on this one through `file:./tauri-plugin-blinko`, and bun materializes that
+# dependency at install time, so the whole directory (including the committed `dist-js`
+# entry files) has to exist before `bun install` runs.
+COPY app/tauri-plugin-blinko ./app/tauri-plugin-blinko
 COPY server/package.json ./server/
 COPY shared/package.json ./shared/
 
