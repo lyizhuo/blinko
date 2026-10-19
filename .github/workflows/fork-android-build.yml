@@ -51,7 +51,12 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        # ubuntu-latest ships a preinstalled SDK (ANDROID_HOME preset).
+        # setup-android@v3 fails: its default `tools` package no longer exists in the repo.
+        run: |
+          echo "Using preinstalled Android SDK at $ANDROID_HOME"
+          sdkmanager --version
+          yes | sdkmanager --licenses > /dev/null
 
       - name: Install NDK
         run: sdkmanager "ndk;27.0.11902837"
