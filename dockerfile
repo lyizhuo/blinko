@@ -15,8 +15,11 @@ ENV npm_config_sharp_libvips_binary_host="https://npmmirror.com/mirrors/sharp-li
 ENV PRISMA_ENGINES_MIRROR="https://registry.npmmirror.com/-/binary/prisma"
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
 
-# Copy Project Files
-COPY . .
+# Copy dependency manifests first: keeps `bun install` cached across source-only changes.
+COPY package.json bun.lock ./
+COPY app/package.json ./app/
+COPY server/package.json ./server/
+COPY shared/package.json ./shared/
 
 # Configure Mirror Based on USE_MIRROR Parameter
 RUN if [ "$USE_MIRROR" = "true" ]; then \
@@ -31,12 +34,20 @@ RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then \
         echo "Detected ARM architecture, installing sharp platform-specific dependencies..." && \
         mkdir -p /tmp/sharp-cache && \
         export SHARP_CACHE_DIRECTORY=/tmp/sharp-cache && \
-        bun install --platform=linux --arch=arm64 sharp@0.34.1 --no-save --unsafe-perm || \
-        bun install --force @img/sharp-linux-arm64 --no-save; \
+        bun install --platform=linux --arch=arm64 sharp@0.34.1 --no-save --unsafe-perm --ignore-scripts || \
+        bun install --force @img/sharp-linux-arm64 --no-save --ignore-scripts; \
     fi
 
 # Install Dependencies and Build App
-RUN bun install --unsafe-perm
+# `--ignore-scripts` is deliberate in this stage: sqlite3's prebuild/node-gyp postinstall can
+# stall for hours on the ARM runner, and it is external to the server bundle, so only the
+# runtime image needs its native binding. Prisma's postinstall is replaced by the explicit
+# `prisma generate` below, and sharp loads its prebuilt binaries from optional dependencies.
+RUN bun install --unsafe-perm --ignore-scripts
+
+# Copy Project Files
+COPY . .
+
 RUN bunx prisma generate
 RUN bun run build:web
 RUN bun run build:seed
