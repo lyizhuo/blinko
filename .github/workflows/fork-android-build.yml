@@ -1,0 +1,186 @@
+name: Fork Android Build
+
+# Fork-exclusive CI: builds Tauri universal release APK and publishes to fork releases.
+# Trigger: `git tag android-1.8.8 && git push origin android-1.8.8`
+# Keep tag version in sync with app/src-tauri/tauri.conf.json `version` manually; CI does not check.
+
+run-name: >-
+  ${{
+    github.event_name == 'workflow_dispatch' && format('Fork Android Build - {0}', github.event.inputs.tag) ||
+    format('Fork Android Build - {0}', github.ref_name)
+  }}
+
+on:
+  push:
+    tags:
+      - 'android-*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version (e.g. 1.8.8)'
+        required: true
+        type: string
+
+jobs:
+  build-android:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF_NAME#android-}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Building Blinko Android $VERSION"
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager "ndk;27.0.11902837"
+
+      - name: Setup Node Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Increase Node.js memory limit for Android build
+        run: |
+          echo "NODE_OPTIONS=--max-old-space-size=4096" >> $GITHUB_ENV
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          cache-on-failure: true
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.8
+
+      - name: Install Dependencies
+        run: |
+          bun install --frozen-lockfile
+
+      - name: Run Prisma Generate
+        run: bun run prisma:generate
+
+      - name: Configure Gradle Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Decode signing keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_B64:-}" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret 未配置，拒绝产出未签名 release"
+            exit 1
+          fi
+          mkdir -p ~/.android
+          printf '%s' "$ANDROID_KEYSTORE_B64" | base64 -d > ~/.android/blinko-upload.jks
+          test -s ~/.android/blinko-upload.jks
+          mkdir -p app/src-tauri/gen/android
+          cat > app/src-tauri/gen/android/keystore.properties << EOF
+          password=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=$HOME/.android/blinko-upload.jks
+          EOF
+
+      - name: Build Android App
+        run: |
+          cd app
+          bun run tauri:android:build
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.11902837
+
+      - name: Rename Android App File
+        run: |
+          set -euo pipefail
+          cd app/src-tauri/gen/android/app/build/outputs/apk/universal/release
+          echo "Original APK file:"
+          ls -la
+          mv app-universal-release.apk "Blinko_${VERSION}_universal.apk"
+          echo "Renamed APK file:"
+          ls -la
+
+      - name: Verify APK signature and package
+        run: |
+          set -euo pipefail
+          APK="app/src-tauri/gen/android/app/build/outputs/apk/universal/release/Blinko_${VERSION}_universal.apk"
+          test -s "$APK"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          test -x "${BT}apksigner"
+          # Fail the build if the APK is unsigned or certs unreadable.
+          "${BT}apksigner" verify --print-certs "$APK" > /tmp/apksigner-certs.txt
+          # Collect every SHA-256 digest in the output (prefix-agnostic: build-tools
+          # label formats differ across versions), normalize to lowercase hex.
+          grep -ioE '[0-9a-f]{2}(:[0-9a-f]{2}){31}' /tmp/apksigner-certs.txt \
+            | tr -d ':' | tr 'A-Z' 'a-z' | sort -u > /tmp/signer-digests.txt
+          test -s /tmp/signer-digests.txt
+          EXPECTED_SIGNER_SHA256="371e496a9a5427e1ae22400d9f15e47fb9daba4cf43e8f56b1b6665e48bf8697"
+          if ! grep -qx "$EXPECTED_SIGNER_SHA256" /tmp/signer-digests.txt; then
+            echo "::error::APK signer fingerprint mismatch: not signed by the blinko upload key"
+            exit 1
+          fi
+          BADGING=$("${BT}aapt" dump badging "$APK" | head -1)
+          if ! printf '%s' "$BADGING" | grep -q "^package: name='com.blinko.app'"; then
+            echo "::error::APK package mismatch: $BADGING"
+            exit 1
+          fi
+          echo "APK signature and package verified."
+
+      - name: Upload Android App to Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Blinko Android ${{ steps.version.outputs.version }}
+          files: app/src-tauri/gen/android/app/build/outputs/apk/universal/release/Blinko_${{ steps.version.outputs.version }}_universal.apk
+          body: |
+            Blinko Android ${{ steps.version.outputs.version }}
+            APK: Blinko_${{ steps.version.outputs.version }}_universal.apk
+            Package: com.blinko.app
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Android APK as artifact (manual run)
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: blinko-android-${{ steps.version.outputs.version }}
+          path: app/src-tauri/gen/android/app/build/outputs/apk/universal/release/Blinko_${{ steps.version.outputs.version }}_universal.apk
+          retention-days: 7
