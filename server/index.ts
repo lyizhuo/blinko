@@ -280,11 +280,25 @@ async function bootstrap() {
       app.set('trust proxy', 1);
     }
 
+    // Hashed assets can be cached forever, but the entry points must revalidate on every load:
+    // with `maxAge: '7d', immutable` they would otherwise pin clients to a previous deployment
+    // for a week (stale index.html pointing at assets that no longer exist, and a service worker
+    // that is never re-fetched, so new builds stay invisible).
+    const revalidateFiles = ['sw.js', 'manifest.webmanifest'];
     const staticOptions = {
       maxAge: '7d',
       immutable: true,
       setHeaders: (res: express.Response, path: string) => {
-        const ext = path.split('.').pop()?.toLowerCase();
+        const fileName = path.split(/[\\/]/).pop()?.toLowerCase() ?? '';
+        if (
+          fileName.endsWith('.html') ||
+          revalidateFiles.includes(fileName) ||
+          fileName.startsWith('workbox-')
+        ) {
+          res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+          return;
+        }
+        const ext = fileName.split('.').pop()?.toLowerCase();
         if (['png', 'webp', 'svg', 'json', 'ico', 'gif', 'mp4'].includes(ext || '')) {
           res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
           res.setHeader('Expires', new Date(Date.now() + 604800000).toUTCString());

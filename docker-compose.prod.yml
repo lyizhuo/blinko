@@ -4,7 +4,9 @@ networks:
 
 services:
   blinko-website:
-    image: blinkospace/blinko:latest
+    # Fork image, built by .github/workflows/fork-arm-build.yml on every push to main.
+    # The package is private: run `docker login ghcr.io` with a token that has read:packages.
+    image: ghcr.io/lyizhuo/blinko:latest
     # container_name: blinko-website
     environment:
       NODE_ENV: production
