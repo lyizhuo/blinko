@@ -39,8 +39,8 @@ export const useDragCard = ({ notes, onNotesUpdate, activeId, setActiveId, inser
     }
   }, [notes]);
 
-  // Disable sensors when fullscreen editor is open
-  const shouldEnableDrag = blinko.fullscreenEditorNoteId === null;
+  // Disable sensors when fullscreen editor is open or time-based ordering is active
+  const shouldEnableDrag = blinko.fullscreenEditorNoteId === null && !blinko.config.value?.isOrderByCreateTime;
   
   const sensors = useSensors(
     useSensor(MouseSensor, {
