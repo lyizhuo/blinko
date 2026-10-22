@@ -36,8 +36,8 @@ export default function FilterPop() {
   const handleApplyFilter = () => {
     blinkoStore.noteListFilterConfig = {
       ...blinkoStore.noteListFilterConfig,
-      startDate: dateRange.start ? new Date(dateRange.start.toString()) : null,
-      endDate: dateRange.end ? new Date(dateRange.end.toString()) : null,
+      startDate: dateRange.start ? dayjs(dateRange.start.toString()).startOf('day').toDate() : null,
+      endDate: dateRange.end ? dayjs(dateRange.end.toString()).endOf('day').toDate() : null,
       tagId: selectedTag ? Number(selectedTag) : null,
       withoutTag: tagStatus === 'without',
       withFile: selectedCondition === 'hasFile',
@@ -46,7 +46,7 @@ export default function FilterPop() {
       hasTodo: selectedCondition === 'hasTodo',
       isArchived: null
     };
-    blinkoStore.noteList.resetAndCall({});
+    blinkoStore.refreshData();
     setIsOpen(false);
   };
 
@@ -68,7 +68,7 @@ export default function FilterPop() {
       isShare: null,
       hasTodo: false
     };
-    blinkoStore.noteList.resetAndCall({});
+    blinkoStore.refreshData();
     setIsOpen(false);
   };
 
