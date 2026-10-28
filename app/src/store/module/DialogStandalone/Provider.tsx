@@ -12,7 +12,7 @@ const CloseButton = ({ onClose }: { onClose: () => void }) => (
   <motion.div
     onClick={onClose}
     className={`cursor-pointer absolute
-    md:top-[-12px] md:right-[-12px] top-[-20px] right-[calc(50%-17.5px)] bg-background border-2 border-border z-[2002] text-foreground p-2 rounded-full
+    md:top-[-12px] md:right-[-12px] top-[-12px] right-[calc(50%-17.5px)] bg-background border-2 border-border z-[2002] text-foreground p-2 rounded-full
     !w-[35px] !h-[35px] flex items-center justify-center shadow-lg`}
     whileTap={{
       scale: 0.85,
@@ -180,7 +180,12 @@ const Dialog = observer(() => {
       }}
       hideCloseButton={(size === 'full' || onlyContent) ? true : false}
       className={`${className} ${transparent ? 'bg-transparent' : ''}`}
-      classNames={classNames}
+      classNames={{
+        ...classNames,
+        // The modal layer spans the whole window, so tall dialogs and the
+        // floating close button would land under the status bar.
+        wrapper: `${classNames?.wrapper ?? ''} pt-[var(--safe-area-inset-top,0px)]`,
+      }}
       isDismissable={isDismissable}
       motionProps={{
         variants: {

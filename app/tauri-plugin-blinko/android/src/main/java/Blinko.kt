@@ -81,10 +81,13 @@ class Blinko {
                     val bars = insets.getInsets(
                         WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
                     )
+                    // With interactive-widget=resizes-content the IME covers the
+                    // navigation bar, so it must not count as bottom safe area.
+                    val ime = insets.getInsets(WindowInsets.Type.ime())
                     left = bars.left
                     top = bars.top
                     right = bars.right
-                    bottom = bars.bottom
+                    bottom = maxOf(0, bars.bottom - ime.bottom)
                 } else {
                     @Suppress("DEPRECATION")
                     run {
