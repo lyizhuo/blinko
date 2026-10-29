@@ -431,7 +431,10 @@ export class EditorStore {
     try {
       for (let i = 0; i < editor?.length; i++) {
         //@ts-ignore
-        const editorHeight = window.innerHeight - 200
+        // Edge-to-edge: innerHeight now includes the status bar, so subtract
+        // the top inset to keep the same usable space as before.
+        const topInset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-top')) || 0
+        const editorHeight = window.innerHeight - 200 - topInset
         //@ts-ignore
         if (editor[i].style.height > editorHeight) {
           //@ts-ignore

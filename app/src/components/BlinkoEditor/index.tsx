@@ -95,7 +95,9 @@ export const BlinkoEditor = observer(({ mode, onSended, onHeightChange, isInDial
     blinko.isCreateMode = mode == 'create'
     if (mode == 'create') {
       if (isInDialog) {
-        document.documentElement.style.setProperty('--min-editor-height', `50vh`)
+        // Shrink with the keyboard: 100dvh tracks the resized viewport, 50vh keeps
+        // the half-screen look when the keyboard is closed.
+        document.documentElement.style.setProperty('--min-editor-height', `min(50vh, calc(100dvh - var(--safe-area-inset-top, 0px) - var(--safe-area-inset-bottom, 0px) - 12rem))`)
       }
       const local = blinko.createContentStorage.value
       if (local && local.content != '') {

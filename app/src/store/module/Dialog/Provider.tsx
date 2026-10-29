@@ -12,7 +12,7 @@ const CloseButton = ({ onClose }: { onClose: () => void }) => (
   <motion.div
     onClick={onClose}
     className={`cursor-pointer absolute
-    md:top-[-12px] md:right-[-12px] top-[-12px] right-[calc(50%-17.5px)] bg-background border-2 border-border z-[2002] text-foreground p-2 rounded-full
+    md:top-[-12px] md:right-[-12px] top-1 right-[calc(50%-17.5px)] bg-background border-2 border-border z-[2002] text-foreground p-2 rounded-full
     !w-[35px] !h-[35px] flex items-center justify-center shadow-lg`}
     whileTap={{
       scale: 0.85,
@@ -178,12 +178,13 @@ const Dialog = observer(() => {
           }
         }}
         hideCloseButton={(size === 'full' || onlyContent) ? true : false}
-        className={`${className} ${transparent ? 'bg-transparent' : ''}`}
+        className={`${className} ${transparent ? 'bg-transparent' : ''} ${size === 'full' ? 'h-full min-h-full' : ''}`}
+        scrollBehavior="inside"
         classNames={{
           ...classNames,
           // The modal layer spans the whole window, so tall dialogs and the
           // floating close button would land under the status bar.
-          wrapper: `${classNames?.wrapper ?? ''} pt-[var(--safe-area-inset-top,0px)]`,
+          wrapper: `${classNames?.wrapper ?? ''} pt-[var(--safe-area-inset-top,0px)] pb-[var(--safe-area-inset-bottom,0px)]`,
         }}
         isDismissable={isDismissable}
         motionProps={{
@@ -203,7 +204,7 @@ const Dialog = observer(() => {
       >
         {
           onlyContent ?
-            <ModalContent className="max-h-screen overflow-visible relative modal-content" >
+            <ModalContent className={`max-h-full overflow-visible relative modal-content ${showOnlyContentCloseButton && !isPc ? 'pt-11' : ''}`} >
 
               {
                 showOnlyContentCloseButton &&
@@ -211,7 +212,7 @@ const Dialog = observer(() => {
               }
               <Content />
             </ModalContent> :
-            <ModalContent className="max-h-screen overflow-auto">
+            <ModalContent className="max-h-full overflow-auto">
               {() => (
                 <>
                   {title && <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>}
