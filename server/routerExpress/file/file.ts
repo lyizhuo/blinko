@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import { prisma } from '../../prisma';
 import { getTokenFromRequest } from '../../lib/helper';
 import { FileService } from '../../lib/files';
+import { getHeifPreviewJpeg, getHeifThumbnailJpeg, isHeifPath } from '../../lib/heif';
 
 const router = express.Router();
 const STREAM_THRESHOLD = 5 * 1024 * 1024;
@@ -166,6 +167,32 @@ router.get(/.*/, async (req, res) => {
     } catch (error) {
       console.error(`File not found: ${filePath}`, error);
       return res.status(404).json({ message: "File not found" });
+    }
+
+    // HEIF/HEIC: browsers other than Safari cannot decode HEVC, and sharp's
+    // bundled libvips ships no HEVC decoder either, so convert on the server and
+    // cache the JPEG. `?download=true` keeps serving the untouched original.
+    if (!isDownload && isHeifPath(fullPath)) {
+      try {
+        const { buffer, etag } = needThumbnail
+          ? await getHeifThumbnailJpeg(filePath)
+          : await getHeifPreviewJpeg(filePath);
+
+        if (req.headers['if-none-match'] === etag) {
+          return res.status(304).end();
+        }
+
+        res.set({
+          "Content-Type": "image/jpeg",
+          "ETag": etag,
+          "Cache-Control": "public, max-age=3600",
+          "Content-Disposition": "inline"
+        });
+        return res.send(buffer);
+      } catch (error) {
+        // Unsupported or corrupt HEIF: fall through and serve the original bytes.
+        console.error(`HEIF conversion failed for ${fullPath}:`, error);
+      }
     }
 
     if (isImage(fullPath) && needThumbnail) {

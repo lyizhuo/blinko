@@ -6,6 +6,15 @@ import sharp from "sharp";
 import mime from "mime-types";
 import { getTokenFromRequest } from "../../lib/helper";
 import { prisma } from "../../prisma";
+import {
+  HEIF_PREVIEW_MAX_EDGE,
+  HEIF_PREVIEW_QUALITY,
+  HEIF_THUMBNAIL_MAX_EDGE,
+  HEIF_THUMBNAIL_QUALITY,
+  getHeifJpegFromSource,
+  isHeifPath,
+  readCachedHeifJpeg,
+} from "../../lib/heif";
 
 const router = express.Router();
 
@@ -167,6 +176,45 @@ router.get(/.*/, async (req: Request, res: Response) => {
       // For temp files, require authentication
       if (!token) {
         return res.status(401).json({ error: "Unauthorized" });
+      }
+    }
+
+    // HEIF/HEIC objects are converted on the fly (and cached) because browsers
+    // cannot decode HEVC and a presigned redirect would serve the raw bytes.
+    if (isHeifPath(fullPath)) {
+      try {
+        const options = needThumbnail
+          ? { maxEdge: HEIF_THUMBNAIL_MAX_EDGE, quality: HEIF_THUMBNAIL_QUALITY }
+          : { maxEdge: HEIF_PREVIEW_MAX_EDGE, quality: HEIF_PREVIEW_QUALITY };
+        const cacheId = `s3|${config.s3Bucket}|${decodeURIComponent(fullPath)}`;
+
+        let converted = await readCachedHeifJpeg(cacheId, options);
+        if (!converted) {
+          const object = await s3ClientInstance.send(new GetObjectCommand({
+            Bucket: config.s3Bucket,
+            Key: decodeURIComponent(fullPath)
+          }));
+          const chunks: Uint8Array[] = [];
+          for await (const chunk of object.Body as any) {
+            chunks.push(chunk);
+          }
+          const original = Buffer.concat(chunks);
+          converted = await getHeifJpegFromSource(cacheId, async () => original, options);
+        }
+
+        if (req.headers['if-none-match'] === converted.etag) {
+          return res.status(304).end();
+        }
+
+        res.set({
+          "Content-Type": "image/jpeg",
+          "ETag": converted.etag,
+          "Cache-Control": "public, max-age=86400",
+          "X-Content-Type-Options": "nosniff"
+        });
+        return res.send(converted.buffer);
+      } catch (error) {
+        console.error('HEIF conversion failed, falling back to the original object:', error);
       }
     }
 
