@@ -28,7 +28,7 @@ export const UploadFileWrapper = observer(({ onUpload, children, acceptImage = f
     multiple: false,
     noClick: true,
     accept: acceptImage ? {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp', '.heic', '.heif']
     } : undefined,
     onDrop: async acceptedFiles => {
       setIsLoading(true)
