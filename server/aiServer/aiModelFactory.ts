@@ -21,6 +21,7 @@ import { getGlobalConfig } from '@server/routerTrpc/config';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import { getHeifPreviewJpeg, isHeifPath } from '../lib/heif';
 import { PinoLogger } from '@mastra/loggers';
 import { ModelCapabilities } from './types';
 import { aiModels } from '@shared/index';
@@ -582,7 +583,9 @@ If the underlying model does not support image inputs, respond exactly with: not
   ): Promise<{ dataUrl: string; mime: string }> {
     const { maxEdge = 1024, quality = 70, toJPEG = true, background = '#ffffff' } = options || {};
     try {
-      let pipeline = sharp(imagePath).rotate();
+      // sharp has no HEVC decoder, so HEIF photos are decoded to JPEG first.
+      const input = isHeifPath(imagePath) ? (await getHeifPreviewJpeg(imagePath)).buffer : imagePath;
+      let pipeline = sharp(input).rotate();
       pipeline = pipeline.resize({ width: maxEdge, height: maxEdge, fit: 'inside', withoutEnlargement: true });
       if (toJPEG) {
         // Remove alpha channel when converting to JPEG

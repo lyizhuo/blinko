@@ -18,6 +18,18 @@ export interface TagTreeNode {
   children?: TagTreeNode[];
 }
 export type TagTreeDBNode = Tag & { children?: TagTreeDBNode[]; metadata: { icon: string, path: string } }
+
+// Attachments are classified by MIME type first, then by extension. Set lookups
+// are used because the previous `'jpeg/jpg/...'.includes(ext)` check also matched
+// unrelated extensions that happen to be substrings of that list.
+const IMAGE_EXTENSIONS = new Set([
+  'jpeg', 'jpg', 'png', 'bmp', 'tiff', 'tif', 'webp', 'svg', 'avif',
+  // HEIF family: decoded to JPEG by the server (see server/lib/heif.ts).
+  'heic', 'heif', 'hif', 'heics', 'heifs',
+]);
+const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'ogg', 'mov', 'wmv']);
+const AUDIO_EXTENSIONS = new Set(['mp3', 'aac', 'wav', 'ogg']);
+
 export const helper = {
   regex: {
     isEndsWithHashTag: /#[/\w\p{L}\p{N}]*$/u,
@@ -134,13 +146,14 @@ export const helper = {
       if (mimeType?.startsWith('image')) return 'image'
     }
 
-    if ('jpeg/jpg/png/bmp/tiff/tif/webp/svg'.includes(extension?.toLowerCase() ?? null)) {
+    const normalizedExtension = extension?.toLowerCase() ?? ''
+    if (IMAGE_EXTENSIONS.has(normalizedExtension)) {
       return 'image'
     }
-    if ('mp4/webm/ogg/mov/wmv'.includes(extension?.toLowerCase() ?? null)) {
+    if (VIDEO_EXTENSIONS.has(normalizedExtension)) {
       return 'video';
     }
-    if ('mp3/aac/wav/ogg'.includes(extension?.toLowerCase() ?? null)) {
+    if (AUDIO_EXTENSIONS.has(normalizedExtension)) {
       return 'audio';
     }
     return 'other'

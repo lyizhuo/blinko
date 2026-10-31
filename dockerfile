@@ -117,7 +117,7 @@ RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then \
 
 # Install runtime dependencies; legacy peer deps avoids optional peer conflicts from LangChain.
 RUN echo "Installing additional dependencies..." && \
-    npm install @node-rs/crc32 lightningcss sharp@0.34.1 prisma@5.21.1 && \
+    npm install @node-rs/crc32 lightningcss sharp@0.34.1 prisma@5.21.1 libheif-js@1.23.5 && \
     npm install -g prisma@5.21.1 && \
     npm install sqlite3@5.1.7 && \
     npm install --legacy-peer-deps llamaindex @langchain/community@0.3.40 && \

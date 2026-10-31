@@ -54,6 +54,7 @@
     "feed": "^4.2.2",
     "file-type": "^20.4.1",
     "jsonwebtoken": "^9.0.2",
+    "libheif-js": "^1.23.5",
     "mcp-handler": "^1.0.2",
     "music-metadata": "^11.2.0",
     "ncp": "^2.0.0",
