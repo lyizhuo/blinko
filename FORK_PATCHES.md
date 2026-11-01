@@ -17,6 +17,7 @@
 | 2 | `fix(notes): disable drag while sorting by create time` | [#1107](https://github.com/blinkospace/blinko/issues/1107)（OPEN） | `app/src/hooks/useDragCard.tsx` | 开启“按创建时间排序”时禁用拖拽，防止手机长按误触继续写入 `sortOrder` 并刷新整页 `updatedAt` | 上游提供正式拖拽开关后删除；仅一行条件 |
 | 3 | `fix(notes): refresh current list after date filter` | 暂无上游 PR | `app/src/components/Common/PopoverFloat/filterPop.tsx` | 筛选后刷新当前 path 的列表（原先固定刷新 `noteList`），并用本地日边界修正 UTC 零点截断 | 上游修复筛选后删除本地 commit |
 | 4 | `feat(media): preview HEIF/HEIC images` | [PR #1221](https://github.com/blinkospace/blinko/pull/1221)（OPEN，实现方式不同）、[#674](https://github.com/blinkospace/blinko/issues/674)（OPEN） | `server/lib/heif.ts`（新增）、`server/routerExpress/file/file.ts`、`server/routerExpress/file/s3file.ts`、`server/aiServer/aiModelFactory.ts`、`server/esbuild.config.ts`、`dockerfile`、`app/src/lib/helper.ts`、`app/src/components/BlinkoResource/ResourceItem.tsx`、`app/src/components/Common/UploadFile/index.tsx` | 上游无法预览 HEIF/HEIC：`sharp` 的预编译 libvips 只带 AVIF 解码器，浏览器也不支持 HEVC。本 fork 在**服务端**把 HEIC 懒转换为 JPEG 并缓存，原始文件保留、历史附件同样生效；#1221 则在上传时用浏览器转码并只上传 JPEG，会丢失原始 HEIC 且无法修复已上传的附件 | 上游合并正式方案后评估迁移 |
+| 5 | `fix(app): make the mobile shell edge-to-edge and visually stable`、`fix(android): keep the editor above the software keyboard` | 暂无上游 PR（上游移动端仍是 `100vh` + 固定定位） | `app/src/components/Common/PhotoViewer/`（新增）、`app/src/lib/hooks.ts`、`app/src/components/Layout/*`、`app/src/store/module/Dialog*/Provider.tsx`、`app/src/components/Common/ScrollArea/index.tsx`、`app/index.html`、`app/src/styles/globals.css`、各全屏页面与 `MainActivity.kt` | `enableEdgeToEdge()` 让整个窗口绘制到状态栏/手势条之后，而原来的 `100vh` + `fixed` 布局会把灯箱、对话框、相机控件顶到系统栏下面；底部导航在滚动时反复重锚导致来回闪动，对话框关闭方向与打开方向相反 | 上游提供统一的移动端安全区适配后删除 |
 
 ## HEIF / HEIC 预览实现说明
 
@@ -26,6 +27,16 @@
 - 覆盖范围：附件网格、灯箱大图、Markdown 内嵌图片（`<img src="/api/file/xxx.heic">` 直接拿到 JPEG）、资源管理器、S3 对象存储、AI 识图（`AiModelFactory.readImage`）。
 - 性能：单张 12MP 照片首次解码约 0.5–2s（视图片内容），32MP 约 6s；解码在单进程内串行排队，内存上限按 40MP 图片设置。一屏十几张 HEIC 时会依次出现加载动画，命中缓存后无感。
 - 依赖与构建：`libheif-js@^1.23.5` 写入 `server/package.json`；esbuild 将其列为 external（`server/esbuild.config.ts`）；Docker 运行时层已补装该包（`dockerfile`）。使用 WASM 构建（`libheif-js/wasm-bundle`），比纯 JS 构建快约 5 倍。
+
+## 移动端 edge-to-edge 适配说明
+
+- 平台基线：Android 15（API 35）起 `targetSdk >= 35` 会**强制** edge-to-edge；本项目仍是 `targetSdk 34`，由 `MainActivity` 主动调用 `enableEdgeToEdge()`。升 35 会连带前台服务类型、预测性返回等行为变更，需单独回归，本次未动。
+- Insets 来源：自定义插件命令 `get_safe_area_insets`（`WindowInsetsCompat.Type.systemBars()`）回传，前端 `app/src/lib/safeArea.ts` 写入 `--safe-area-inset-*`；CSS 中统一用 `env(safe-area-inset-*)` 兜底，WebView 直接支持时无需桥接。
+- 视口：`meta viewport` 已含 `viewport-fit=cover` 与 `interactive-widget=resizes-content`；全屏容器改用 `100dvh`，并使用 `--doc-height`（`window.innerHeight`）作为 JS 侧高度来源，避免 `100vh` 在浏览器工具栏收起时跳动。
+- 键盘：`enableEdgeToEdge()` 之后 `adjustResize` 不再收缩视图，因此在 `android.R.id.content` 上按 IME insets 预留底部高度并 `CONSUMED`，防止 WebView 再次收缩造成双重顶起。
+- 灯箱：`react-photo-view` 的 `toolbarRender` 只在 `bannerVisible` 为真时渲染（源码里 banner 内部才调用自定义工具栏），所以保留 banner、用 CSS 去掉它的背景/高度/默认按钮，再把安全区工具栏放进去。
+- 动画：底部导航只保留一个 tween；滚动显隐改为单次垂直手势 + 150ms 冷却 + 忽略横向/弹层手势；对话框手机端向下退出；卡片展开去掉 FLIP 布局动画。
+- 验证方式：Playwright 390×844、`deviceScaleFactor=3`、注入 `--safe-area-inset-top: 47px / bottom: 34px`，断言灯箱 portal 高度等于视口、关闭按钮 `y >= 47`、命中区域 44×44、计数器随滑动切换、控制台无错误。
 
 ## 数据修复记录
 
