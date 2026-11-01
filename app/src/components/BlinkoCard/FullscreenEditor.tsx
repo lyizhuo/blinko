@@ -244,7 +244,7 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
             /* Preview mode - render with MarkdownRender */
             <div
               className="flex-1 overflow-y-auto min-h-0 py-4"
-              style={{ height: isPc ? 'calc(100vh - 100px)' : 'calc(100vh - 80px)' }}
+              style={{ height: isPc ? 'calc(100dvh - 100px)' : 'calc(100dvh - 80px)' }}
               onDoubleClick={handleSwitchToEdit}
             >
               <MarkdownRender
@@ -264,7 +264,7 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
             /* Edit mode - render with BlinkoEditor */
             <div 
               className={`flex-1 overflow-hidden flex flex-col min-h-0 ${isLongText ? 'editor-long-text' : ''}`} 
-              style={{ height: isPc ? 'calc(100vh - 100px)' : 'calc(100vh - 80px)', paddingBottom: isPc ? '20px' : '0' }}
+              style={{ height: isPc ? 'calc(100dvh - 100px)' : 'calc(100dvh - 80px)', paddingBottom: isPc ? '20px' : '0' }}
             >
               <BlinkoEditor
                 key={`editor-${blinkoItem.id}`}

@@ -35,7 +35,7 @@ export const GradientBackground = ({ children, className }: GradientBackgroundPr
   const blinko = RootStore.Get(BlinkoStore)
 
   return (
-    <div className={cn("relative w-full h-[100vh]", className)}>
+    <div className={cn("relative w-full h-[100dvh]", className)}>
       <GradientErrorBoundary>
         <ShaderGradientCanvas
           style={{

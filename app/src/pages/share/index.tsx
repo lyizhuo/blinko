@@ -7,7 +7,7 @@ const Share = observer(() => {
 
   }, [])
 
-  return <div className="flex flex-col h-[100vh] w-full bg-secondbackground" >
+  return <div className="flex flex-col h-[100dvh] w-full bg-secondbackground" >
     <Hub />
   </div>
 });

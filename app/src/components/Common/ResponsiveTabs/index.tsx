@@ -31,7 +31,7 @@ export const ResponsiveTabs = observer(({
   color = 'primary',
   classNames = {},
   sidebarClassName = '',
-  sidebarMaxHeight = 'calc(100vh-140px)',
+  sidebarMaxHeight = 'calc(100dvh - 140px)',
   mobileStickyTop = false,
   children
 }: ResponsiveTabsProps) => {

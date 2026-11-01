@@ -5,8 +5,12 @@
  * The Android activity draws edge-to-edge. Recent WebViews expose the system
  * bar insets through env(safe-area-inset-*); the Android bridge overrides these
  * with measured values (set on documentElement) for WebViews that report 0.
+ *
+ * `--doc-height` is rewritten in JavaScript from `window.innerHeight`; the dvh
+ * fallback keeps the very first paint (and browsers without the bridge) correct.
  */
 :root {
+  --doc-height: 100dvh;
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
@@ -358,4 +362,36 @@ body {
 
 .group[data-focus-visible="true"] .group-data-\[focus-visible\=true\]\:ring-2 {
   --tw-ring-shadow: 0 !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * Mobile interaction defaults
+ * ------------------------------------------------------------------ */
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 767px) {
+  html,
+  body {
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+/* Keeps the last row of a list reachable above the fixed mobile bottom bar. */
+.blinko-bottom-nav-spacer {
+  height: calc(60px + var(--safe-area-inset-bottom, 0px) + 8px);
+  flex-shrink: 0;
 }

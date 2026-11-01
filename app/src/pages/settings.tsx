@@ -219,7 +219,7 @@ const Page = observer(() => {
         <div className="w-full max-w-[1200px] mx-auto px-4 py-4 flex flex-row h-full">
           <div className="w-56 mr-6">
             <div className="rounded-xl bg-background p-1 mb-4">
-              <ScrollArea onBottom={() => { }} className="h-auto max-h-[calc(100vh-140px)]">
+              <ScrollArea onBottom={() => { }} className="h-auto max-h-[calc(100dvh-140px)]">
                 <div className="p-1 flex flex-col flex-nowrap gap-1">
                   {tabItems.map((item) => (
                     <button

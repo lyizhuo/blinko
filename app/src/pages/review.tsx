@@ -60,7 +60,7 @@ const App = observer(() => {
     : blinko.dailyReviewNoteList.value ?? []
 
   return (
-    <ScrollArea fixMobileTopBar className="App h-full overflow-hidden mt-2">
+    <ScrollArea fixMobileTopBar className="App h-full overflow-hidden mt-2" mobileBottomSpace>
       <div className="flex justify-center mb-2">
         <Button
           color={store.isRandomReviewMode ? "primary" : "default"}
@@ -103,7 +103,7 @@ const App = observer(() => {
             effect={"cards"}
             grabCursor={true}
             modules={[EffectCards, Virtual]}
-            className="mt-5 md:mt-4 w-[300px] h-[calc(100vh_-_300px)] md:w-[550px] "
+            className="mt-5 md:mt-4 w-[300px] h-[calc(100dvh_-_300px)] md:w-[550px] "
             allowSlideNext={true}
             allowSlidePrev={true}
             touchRatio={1}

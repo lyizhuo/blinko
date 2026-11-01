@@ -80,7 +80,7 @@ const AiSharePage = observer(() => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-[100dvh] bg-background flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Icon icon="eos-icons:three-dots-loading" width="40" height="40" className="text-desc" />
                     <p className="text-desc">{i18n.t('loading-shared-conversation')}</p>
@@ -91,7 +91,7 @@ const AiSharePage = observer(() => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-[100dvh] bg-background flex items-center justify-center">
                 <Card className="max-w-md mx-auto">
                     <CardBody className="text-center">
                         <Icon icon="hugeicons:alert-circle" width="48" height="48" className="text-red-500 mx-auto mb-4" />
@@ -104,7 +104,7 @@ const AiSharePage = observer(() => {
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-[100dvh] bg-background">
             {/* Share Header */}
             <div className="bg-background/80 backdrop-blur-sm sticky top-0 z-10">
                 <div className="max-w-4xl mx-auto px-4 py-3">
@@ -129,7 +129,7 @@ const AiSharePage = observer(() => {
             </div>
 
             {/* Chat Content */}
-            <div className="max-w-4xl mx-auto h-[calc(100vh-100px)]">
+            <div className="max-w-4xl mx-auto h-[calc(100dvh-100px)]">
                 <BlinkoChatBox shareMode={true} />
             </div>
         </div>

@@ -84,7 +84,7 @@ const AIPage = observer(() => {
       style={{
         height: isPc ? '100%' : `calc(100% - ${!isVisible ? '0px' : 'calc(60px + var(--safe-area-inset-bottom, 0px))'})`
       }}
-      className={`flex flex-col items-center ${aiStore.isChatting ? 'pt-0' : 'pt-[calc(10vh_+_var(--safe-area-inset-top,0px))] md:pt-[20vh]'} w-full gap-4 relative  md:h-[calc(100vh_-_80px)]`}>
+      className={`flex flex-col items-center ${aiStore.isChatting ? 'pt-0' : 'pt-[calc(10vh_+_var(--safe-area-inset-top,0px))] md:pt-[20vh]'} w-full gap-4 relative  md:h-[calc(100dvh_-_80px)]`}>
       {!aiStore.isChatting ? (
         <div className="flex justify-center w-full">
           <motion.div

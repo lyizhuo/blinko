@@ -39,38 +39,80 @@ export const useConfigSetting = (configKey: keyof BlinkoStore['config']['value']
 };
 
 
-export const useSwiper = (threshold = 50) => {
+const SWIPE_IGNORE_SELECTOR = '.PhotoView-Portal, [role="dialog"], [data-swipe-ignore]';
+
+/**
+ * Shows the mobile bottom bar while the finger moves down and hides it while it
+ * moves up.
+ *
+ * The previous implementation re-anchored the touch origin on every move, so one
+ * long drag could toggle the bar dozens of times (the "flickering" the bar had on
+ * device), and it also reacted to horizontal swipes and to drags inside the image
+ * viewer, dialogs and carousels. This version only follows a single vertical
+ * gesture, ignores those overlays, and rate-limits consecutive toggles.
+ */
+export const useSwiper = (threshold = 64) => {
   const [isVisible, setIsVisible] = useState(true);
-  const touchStartY = useRef(0);
-  const lastDirection = useRef<'up' | 'down'>();
+  const startY = useRef(0);
+  const startX = useRef(0);
+  const tracking = useRef(false);
+  const lastToggleAt = useRef(0);
 
   useEffect(() => {
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0]?.clientY || 0;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.touches[0]?.clientY || 0;
-      const deltaY = touchY - touchStartY.current;
-
-      if (Math.abs(deltaY) > threshold) {
-        if (deltaY > 0) {
-          lastDirection.current = 'down';
-          setIsVisible(true);
-        } else {
-          lastDirection.current = 'up';
-          setIsVisible(false);
-        }
-        touchStartY.current = touchY;
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) {
+        tracking.current = false;
+        return;
       }
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.(SWIPE_IGNORE_SELECTOR)) {
+        tracking.current = false;
+        return;
+      }
+      tracking.current = true;
+      startY.current = event.touches[0]!.clientY;
+      startX.current = event.touches[0]!.clientX;
     };
 
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchmove', handleTouchMove);
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!tracking.current || event.touches.length !== 1) return;
+
+      const deltaY = event.touches[0]!.clientY - startY.current;
+      const deltaX = event.touches[0]!.clientX - startX.current;
+
+      // Horizontal gesture (page swipe / carousel): stop following this touch.
+      if (Math.abs(deltaX) > 24 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        tracking.current = false;
+        return;
+      }
+
+      if (Math.abs(deltaY) < threshold) return;
+
+      const now = Date.now();
+      if (now - lastToggleAt.current < 150) return;
+
+      // Finger moving down means the content is scrolling back up: reveal the bar.
+      const shouldShow = deltaY > 0;
+      setIsVisible(previous => (previous === shouldShow ? previous : shouldShow));
+      lastToggleAt.current = now;
+      // Re-anchor so the remainder of a long drag cannot toggle again.
+      startY.current = event.touches[0]!.clientY;
+    };
+
+    const handleTouchEnd = () => {
+      tracking.current = false;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
     return () => {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, [threshold]);
 

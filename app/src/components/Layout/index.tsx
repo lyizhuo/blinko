@@ -62,7 +62,7 @@ export const CommonLayout = observer(({ children, header }: { children?: React.R
   }, []);
 
 
-  if (!isClient) return <></>;
+  if (!isClient) return <div className="h-mobile-full w-full bg-secondbackground" aria-hidden />;
 
   if (
     location.pathname == '/signin' ||
