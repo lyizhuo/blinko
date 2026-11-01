@@ -196,14 +196,14 @@ export const MyCamera = ({ onComplete }: MyCameraProps) => {
 
       <Button
         isIconOnly
-        className="absolute right-5 top-5 backdrop-blur-sm rounded-full"
+        className="absolute right-[calc(var(--safe-area-inset-right,0px)+1rem)] top-[calc(var(--safe-area-inset-top,0px)+1rem)] backdrop-blur-sm rounded-full"
         onPress={() => RootStore.Get(DialogStandaloneStore).close()}
       >
         <Icon icon="iconamoon:close-thin" width="24" height="24" />
       </Button>
 
 
-      <div className="fixed bottom-10 left-0 right-0 flex justify-center items-center gap-5">
+      <div className="fixed bottom-[calc(var(--safe-area-inset-bottom,0px)+2rem)] left-0 right-0 flex justify-center items-center gap-5">
         {lastCaptureType && !showBlackScreen && (
           <Button isIconOnly onPress={handleComplete} radius='lg' className={`absolute right-10 group w-fit`} color='primary' >
             <Icon icon="mynaui:upload" width="24" height="24" />
