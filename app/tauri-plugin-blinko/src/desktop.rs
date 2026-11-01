@@ -23,4 +23,14 @@ impl<R: Runtime> Blinko<R> {
     // Different platforms would need different implementations
     Ok(())
   }
+
+  pub fn get_safe_area_insets(&self) -> crate::Result<SafeAreaInsets> {
+    // Desktop windows are not drawn edge-to-edge.
+    Ok(SafeAreaInsets {
+      top: 0.0,
+      right: 0.0,
+      bottom: 0.0,
+      left: 0.0,
+    })
+  }
 }

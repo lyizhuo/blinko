@@ -179,7 +179,10 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
         top: 0, 
         left: 0, 
         right: 0, 
-        bottom: 0
+        bottom: 0,
+        // Covers the whole window (the layout header is hidden here), so it has to
+        // clear the status bar itself. The bottom toolbar handles its own inset.
+        paddingTop: 'var(--safe-area-inset-top, 0px)'
       }}
     >
       <div className="h-full flex">
@@ -241,7 +244,7 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
             /* Preview mode - render with MarkdownRender */
             <div
               className="flex-1 overflow-y-auto min-h-0 py-4"
-              style={{ height: isPc ? 'calc(100vh - 100px)' : 'calc(100vh - 80px)' }}
+              style={{ height: isPc ? 'calc(100dvh - 100px)' : 'calc(100dvh - 80px)' }}
               onDoubleClick={handleSwitchToEdit}
             >
               <MarkdownRender
@@ -261,7 +264,7 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
             /* Edit mode - render with BlinkoEditor */
             <div 
               className={`flex-1 overflow-hidden flex flex-col min-h-0 ${isLongText ? 'editor-long-text' : ''}`} 
-              style={{ height: isPc ? 'calc(100vh - 100px)' : 'calc(100vh - 80px)', paddingBottom: isPc ? '20px' : '0' }}
+              style={{ height: isPc ? 'calc(100dvh - 100px)' : 'calc(100dvh - 80px)', paddingBottom: isPc ? '20px' : '0' }}
             >
               <BlinkoEditor
                 key={`editor-${blinkoItem.id}`}
@@ -275,7 +278,7 @@ export const FullscreenEditor = observer(({ blinkoItem, isOpen, onClose }: Fulls
 
           {/* Bottom toolbar with back button (Mobile only) */}
           {!isPc && (
-            <div className="flex items-center justify-between py-3 px-2 flex-shrink-0 border-t border-border bg-background" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="flex items-center justify-between py-3 px-2 flex-shrink-0 border-t border-border bg-background" style={{ paddingBottom: 'var(--safe-area-inset-bottom, 0px)' }}>
               <Button
                 isIconOnly
                 variant="light"

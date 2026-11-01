@@ -62,7 +62,7 @@ export const CommonLayout = observer(({ children, header }: { children?: React.R
   }, []);
 
 
-  if (!isClient) return <></>;
+  if (!isClient) return <div className="h-mobile-full w-full bg-secondbackground" aria-hidden />;
 
   if (
     location.pathname == '/signin' ||
@@ -104,7 +104,11 @@ export const CommonLayout = observer(({ children, header }: { children?: React.R
           style={!isPc ? {
             position: 'fixed',
             top: 0,
-            borderRadius:'0 0 12px 12px',
+            // Grow into the status bar area instead of sitting under it.
+            height: 'calc(3.5rem + var(--safe-area-inset-top, 0px))',
+            minHeight: 'calc(3.5rem + var(--safe-area-inset-top, 0px))',
+            paddingTop: 'calc(var(--safe-area-inset-top, 0px) + 0.5rem)',
+            borderRadius: '0 0 12px 12px',
             zIndex: 11,
             width: '100%',
             background: getFixedHeaderBackground(),

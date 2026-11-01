@@ -1,5 +1,5 @@
 import { Image } from '@heroui/react';
-import { PhotoProvider, PhotoView } from 'react-photo-view';
+import { PhotoProvider, PhotoView } from '@/components/Common/PhotoViewer';
 
 interface ImageWrapperProps {
   src?: string;

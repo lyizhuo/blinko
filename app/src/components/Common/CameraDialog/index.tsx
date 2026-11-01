@@ -178,7 +178,7 @@ export const MyCamera = ({ onComplete }: MyCameraProps) => {
   }, [lastCaptureType, recordedChunks, onComplete]);
 
   return (
-    <div className="relative w-full h-screen bg-black flex flex-col items-center">
+    <div className="relative w-full h-[100dvh] bg-black flex flex-col items-center">
       <div className="w-full h-full flex items-center justify-center bg-black">
         <Webcam
           ref={webcamRef}

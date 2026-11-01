@@ -13,6 +13,8 @@ type IProps = {
   pullDownThreshold?: number;
   maxPullDownDistance?: number;
   fixMobileTopBar?: boolean
+  /** Reserve room for the fixed mobile bottom bar at the end of the content. */
+  mobileBottomSpace?: boolean
 };
 
 export type ScrollAreaHandles = {
@@ -28,7 +30,8 @@ export const ScrollArea = observer(forwardRef<ScrollAreaHandles, IProps>(({
   onRefresh,
   pullDownThreshold = 60,
   maxPullDownDistance = 100,
-  fixMobileTopBar = false
+  fixMobileTopBar = false,
+  mobileBottomSpace = false
 }, ref) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isPc = useMediaQuery('(min-width: 768px)');
@@ -231,7 +234,7 @@ export const ScrollArea = observer(forwardRef<ScrollAreaHandles, IProps>(({
       }}
       className={`${className} overflow-y-scroll overflow-x-hidden ${isPc ? '' : 'scrollbar-hide'} scroll-smooth scroll-area`}
     >
-      {fixMobileTopBar && !isPc && <div className="h-16"></div>}
+      {fixMobileTopBar && !isPc && <div className="blinko-mobile-header-spacer" />}
       {/* Pull to refresh indicator */}
       {showRefreshIndicator && (
         <div
@@ -262,6 +265,7 @@ export const ScrollArea = observer(forwardRef<ScrollAreaHandles, IProps>(({
       )}
 
       {children}
+      {!isPc && mobileBottomSpace && <div className="blinko-bottom-nav-spacer" aria-hidden />}
     </div>
   );
 }))

@@ -8,69 +8,114 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.content.Context
 
 class Blinko {
+    /**
+     * Applies the app theme to the system bars.
+     *
+     * The activity runs edge-to-edge, so the bars themselves are transparent and the app
+     * content scrolls behind them. Only the icon/gesture-bar contrast has to follow the
+     * theme, so all this does is flip the light/dark appearance flags.
+     */
     fun setcolor(hex: String, activity: Activity) {
         val color = Color.parseColor(hex)
         val isLightColor = isColorLight(color)
 
-        // Use CSS background colors for consistency
-        val finalColor = if (!isLightColor) {
-            Color.parseColor("#0B0B0C") // Dark theme background color
-        } else {
-            Color.WHITE // Light theme background color (hsl(0 0% 100%))
-        }
-
-        activity.window.statusBarColor = finalColor
-        activity.window.navigationBarColor = finalColor
-
-        // Save theme preference with original hex but apply pure black
+        // Save theme preference with the original hex so the startup theme matches.
         saveThemePreference(activity, !isLightColor, hex)
 
-        // For dark mode with pure black, always use dark appearance (light text/icons)
-        // For light mode, use the original color-based logic
-        val isDarkMode = !isLightColor
-        val useLightAppearance = !isDarkMode && isColorLight(finalColor)
+        // Light background -> dark icons, dark background -> light icons.
+        applyBarIconAppearance(activity, darkIcons = isLightColor)
+    }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val statusAppearance = if (useLightAppearance) {
-                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-            } else {
-                0
+    private fun applyBarIconAppearance(activity: Activity, darkIcons: Boolean) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val mask = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
+                        WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                activity.window.insetsController?.setSystemBarsAppearance(
+                    if (darkIcons) mask else 0,
+                    mask
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // Preserve the layout flags set by enableEdgeToEdge(), only toggle the
+                // light-icon flags.
+                val decor = activity.window.decorView
+                var flags = decor.systemUiVisibility
+                flags = flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    flags = flags and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+                }
+                if (darkIcons) {
+                    flags = flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        flags = flags or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                    }
+                }
+                @Suppress("DEPRECATION")
+                decor.systemUiVisibility = flags
             }
-
-            val navAppearance = if (useLightAppearance) {
-                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-            } else {
-                0
-            }
-
-            activity.window.insetsController?.setSystemBarsAppearance(
-                statusAppearance,
-                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-            )
-
-            activity.window.insetsController?.setSystemBarsAppearance(
-                navAppearance,
-                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-            )
-
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            var flags = 0
-
-            if (useLightAppearance) {
-                flags = flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && useLightAppearance) {
-                flags = flags or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-            }
-
-            @Suppress("DEPRECATION")
-            activity.window.decorView.systemUiVisibility = flags
+        } catch (e: Exception) {
+            Log.e("Blinko", "Error applying bar icon appearance: ${e.message}")
         }
+    }
+
+    /**
+     * Current system bar + display cutout insets, in density independent pixels.
+     * The WebView runs edge-to-edge and needs these to keep tap targets clear of the bars.
+     */
+    fun getSafeAreaInsets(activity: Activity): Map<String, Float> {
+        val density = activity.resources.displayMetrics.density.takeIf { it > 0f } ?: 1f
+        var left = 0
+        var top = 0
+        var right = 0
+        var bottom = 0
+
+        try {
+            val insets = activity.window.decorView.rootWindowInsets
+            if (insets != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val bars = insets.getInsets(
+                        WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
+                    )
+                    // With interactive-widget=resizes-content the IME covers the
+                    // navigation bar, so it must not count as bottom safe area.
+                    val ime = insets.getInsets(WindowInsets.Type.ime())
+                    left = bars.left
+                    top = bars.top
+                    right = bars.right
+                    bottom = maxOf(0, bars.bottom - ime.bottom)
+                } else {
+                    @Suppress("DEPRECATION")
+                    run {
+                        left = insets.systemWindowInsetLeft
+                        top = insets.systemWindowInsetTop
+                        right = insets.systemWindowInsetRight
+                        bottom = insets.systemWindowInsetBottom
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        insets.displayCutout?.let { cutout ->
+                            left = maxOf(left, cutout.safeInsetLeft)
+                            top = maxOf(top, cutout.safeInsetTop)
+                            right = maxOf(right, cutout.safeInsetRight)
+                            bottom = maxOf(bottom, cutout.safeInsetBottom)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("Blinko", "Error reading window insets: ${e.message}")
+        }
+
+        return mapOf(
+            "top" to top / density,
+            "right" to right / density,
+            "bottom" to bottom / density,
+            "left" to left / density
+        )
     }
 
     private fun isColorLight(color: Int): Boolean {

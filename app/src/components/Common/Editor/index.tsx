@@ -219,6 +219,11 @@ const Editor = observer(({ content, onChange, onSend, isSendLoading, originFiles
         shadow='none'
         className={`${showTopToolbar ? 'h-full flex flex-col flex-1 min-h-0' : 'p-2'} relative ${withoutOutline ? '' : 'border-2 border-border'} !transition-all ${showTopToolbar ? 'overflow-hidden' : 'overflow-visible'} 
         ${store.isFullscreen ? 'fixed inset-0 z-[9999] m-0 rounded-none border-none bg-background' : ''}`}
+        // Fullscreen mode covers the window, so its toolbar has to clear the status bar.
+        style={store.isFullscreen ? {
+          paddingTop: 'var(--safe-area-inset-top, 0px)',
+          paddingBottom: 'var(--safe-area-inset-bottom, 0px)'
+        } : undefined}
         ref={el => {
           if (el) {
             //@ts-ignore

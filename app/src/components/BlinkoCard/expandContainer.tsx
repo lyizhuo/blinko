@@ -66,7 +66,7 @@ export const ExpandableContainer = ({ isExpanded, children, onClose, withoutBoxS
             backgroundColor: 'var(--background)',
             zIndex: 20,
             width: "100vw",
-            height: "100vh",
+            height: '100dvh',
             transition: 'all 0.3s ease-in-out',
           }}
         >
@@ -99,14 +99,12 @@ export const ExpandableContainer = ({ isExpanded, children, onClose, withoutBoxS
         top: isExpanded ? 0 : 'auto',
         left: isExpanded ? 0 : 'auto',
         zIndex: isExpanded ? 50 : 1,
-        willChange: isExpanded ? 'transform, width, height' : 'auto',
+        width: isExpanded ? '100vw' : '100%',
+        height: isExpanded ? '100dvh' : 'auto',
       }}
-      layout
-      animate={{
-        width: isExpanded ? "100vw" : "100%",
-        height: isExpanded ? "100vh" : "auto",
-      }}
-      transition={ANIMATION_CONFIG}
+      initial={false}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.12 }}
     >
       {children}
     </motion.div>

@@ -37,51 +37,36 @@ export const MobileNavBar = observer(({ onItemClick }: MobileNavBarProps) => {
   return (
     <motion.div
       className="blinko-bottom-bar h-[60px] flex w-full px-3 py-2 gap-1 bg-background block md:hidden overflow-hidden fixed bottom-0 z-50"
-      animate={{ y: isVisible ? 0 : 100 }}
-      transition={{
-        type: "spring",
-        damping: 25,
-        stiffness: 300,
-        mass: 0.8,
-        bounce: 0.3
-      }}
+      initial={false}
+      animate={{ y: isVisible ? 0 : '100%' }}
+      transition={{ type: 'tween', duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
       style={{
+        willChange: 'transform',
+        // Grow into the navigation bar / gesture area instead of sitting under it.
+        height: 'calc(60px + var(--safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(var(--safe-area-inset-bottom, 0px) + 0.5rem)',
         background: getFixedHeaderBackground(),
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)'
       }}
     >
-      {mobileItems.map((i, index) => (
-        <motion.div
-          key={i.title}
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{
-            type: "spring",
-            damping: 20,
-            stiffness: 400,
-            delay: index * 0.1
-          }}
-          className="flex-1"
-        >
+      {mobileItems.map(i => (
+        <div key={i.title} className="flex-1">
           <Link
             className={`w-full h-full items-center justify-center flex !flex-col group ${SideBarItem} ${base.isSideBarActive(routerInfo, i) ? '!text-foreground' : '!text-desc'
-              } transition-all duration-200 hover:scale-110 active:scale-95`}
+              }`}
             to={i.href}
             onClick={() => {
               base.currentRouter = i;
               onItemClick?.();
             }}
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
-            <motion.div
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
+            <motion.div whileTap={{ scale: 0.9 }} transition={{ type: 'tween', duration: 0.12 }}>
               <Icon className={`text-center`} icon={i.icon} width="24" height="24" />
             </motion.div>
           </Link>
-        </motion.div>
+        </div>
       ))}
     </motion.div>
   );

@@ -65,7 +65,7 @@ const Page: React.FC = observer(() => {
   if (isExpired) {
     return (
       <GradientBackground>
-        <div className='p-4 h-[100vh] w-full flex justify-center items-center'>
+        <div className='p-4 h-[100dvh] w-full flex justify-center items-center'>
           <Card className="p-6 flex flex-col gap-4 items-center glass-effect">
             <div className="flex items-center gap-2">
               <Icon icon="solar:clock-circle-bold" className="text-2xl text-danger" />
@@ -81,7 +81,7 @@ const Page: React.FC = observer(() => {
   if (hasPassword && !store.shareNote?.value) {
     return (
       <GradientBackground>
-        <div className='p-4 h-[100vh] w-full flex justify-center items-center'>
+        <div className='p-4 h-[100dvh] w-full flex justify-center items-center'>
           <Card className="p-6 flex flex-col gap-4 items-center glass-effect">
             <div className="flex items-center gap-2">
               <Icon icon="solar:lock-password-bold" className="text-2xl" />
@@ -113,7 +113,7 @@ const Page: React.FC = observer(() => {
 
   return (
     <GradientBackground>
-      <div className='p-4 h-[100vh] w-full flex justify-center items-center'>
+      <div className='p-4 h-[100dvh] w-full flex justify-center items-center'>
         {store.shareNote?.value && (
           <div className="glass-effect max-h-[90vh] overflow-y-scroll w-[95%] md:min-w-[30%] md:max-w-[50%] rounded-xl shadow-[1px_0_25px_11px_rgba(98,0,114,0.17)]">
             <BlinkoCard blinkoItem={store.shareNote?.value} isShareMode glassEffect defaultExpanded={true} />

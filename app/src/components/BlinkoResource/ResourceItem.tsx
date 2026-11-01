@@ -1,6 +1,6 @@
 import { Card, Checkbox, Tooltip } from '@heroui/react';
 import { Icon } from '@/components/Common/Iconify/icons';
-import { PhotoProvider, PhotoView } from 'react-photo-view';
+import { PhotoProvider, PhotoView } from '@/components/Common/PhotoViewer';
 import filesize  from 'filesize';
 import dayjs from '@/lib/dayjs';
 import { FileIcons } from '@/components/Common/AttachmentRender/FileIcon';

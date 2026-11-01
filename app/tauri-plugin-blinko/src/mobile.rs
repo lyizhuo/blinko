@@ -38,4 +38,11 @@ impl<R: Runtime> Blinko<R> {
       .run_mobile_plugin("openAppSettings", ())
       .map_err(Into::into)
   }
+
+  pub fn get_safe_area_insets(&self) -> crate::Result<SafeAreaInsets> {
+    self
+      .0
+      .run_mobile_plugin("getSafeAreaInsets", ())
+      .map_err(Into::into)
+  }
 }

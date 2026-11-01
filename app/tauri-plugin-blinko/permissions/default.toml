@@ -1,3 +1,3 @@
 [default]
 description = "Default permissions for the plugin"
-permissions = ["allow-setcolor"]
+permissions = ["allow-setcolor", "allow-get-safe-area-insets"]

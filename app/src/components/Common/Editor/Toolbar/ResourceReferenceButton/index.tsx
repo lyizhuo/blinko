@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { helper } from '@/lib/helper';
 import { ResourceType } from '@shared/lib/types';
 import { PromiseState } from '@/store/standard/PromiseState';
-import { PhotoProvider } from 'react-photo-view';
+import { PhotoProvider } from '@/components/Common/PhotoViewer';
 import { useTranslation } from 'react-i18next';
 import { ResourceItemPreview } from '@/components/BlinkoResource/ResourceItem';
 import { LoadingAndEmpty } from '@/components/Common/LoadingAndEmpty';

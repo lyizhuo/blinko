@@ -47,6 +47,9 @@ export class ToastPlugin implements Store {
 
   provider = () => (
     <Toaster
+      // Toasts sit at the top of the window; with edge-to-edge they would land
+      // under the status bar without this offset.
+      containerStyle={{ top: 'calc(var(--safe-area-inset-top, 0px) + 1rem)' }}
       toastOptions={{
         className: '!bg-[#fff] !rounded-2xl !text-[#000] dark:!bg-[#131218] dark:!text-[#fff] !shadow-md',
       }}

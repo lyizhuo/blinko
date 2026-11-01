@@ -37,7 +37,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
   Builder::new("blinko")
     .invoke_handler(tauri::generate_handler![
       commands::setcolor,
-      commands::open_app_settings
+      commands::open_app_settings,
+      commands::get_safe_area_insets
     ])
     .setup(|app, api| {
       #[cfg(mobile)]

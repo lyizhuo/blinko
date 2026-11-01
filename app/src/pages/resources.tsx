@@ -12,7 +12,7 @@ import { ResourceMultiSelectPop } from "@/components/BlinkoResource/ResourceMult
 import { Breadcrumbs, BreadcrumbItem, Button } from "@heroui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingAndEmpty } from "@/components/Common/LoadingAndEmpty";
-import { PhotoProvider } from "react-photo-view";
+import { PhotoProvider } from "@/components/Common/PhotoViewer";
 import { useNavigate } from "react-router-dom";
 const Page = observer(() => {
   const navigate = useNavigate();
@@ -49,8 +49,9 @@ const Page = observer(() => {
       <DragDropContext onDragEnd={resourceStore.handleDragEnd}>
         <ScrollArea
           fixMobileTopBar
+          mobileBottomSpace
           onBottom={resourceStore.loadNextPage}
-          className="md:px-6 h-[calc(100%_-_5px)] md:h-[calc(100vh_-_100px)] px-2 md:max-w-[1000px] w-full overflow-x-hidden mx-auto"
+          className="md:px-6 h-[calc(100%_-_5px)] md:h-[calc(100dvh_-_100px)] px-2 md:max-w-[1000px] w-full overflow-x-hidden mx-auto"
         >
           <div className="flex items-center justify-between ">
             <div className="flex items-center gap-2">
@@ -58,15 +59,10 @@ const Page = observer(() => {
                 {resourceStore.currentFolder && (
                   <motion.div
                     key={resourceStore.currentFolder}
-                    initial={{ y: -10, opacity: 0, height: 0 }}
-                    animate={{ y: 0, opacity: 1, height: "auto" }}
-                    exit={{ y: -10, opacity: 0, height: 0 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30,
-                      duration: 0.15
-                    }}
+                    initial={{ y: -6, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -6, opacity: 0 }}
+                    transition={{ type: "tween", duration: 0.15, ease: "easeOut" }}
                   >
                     <Breadcrumbs variant="solid" className="ml-[-8px]" size='lg'>
                       {folderBreadcrumbs.map((folder, index) => (

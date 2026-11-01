@@ -41,7 +41,13 @@ export const Sidebar = observer(({ onItemClick }: SidebarProps) => {
 
   return (
     <div
-      style={{ width: isPc ? `${base.sideBarWidth}px` : '100%' }}
+      style={{
+        width: isPc ? `${base.sideBarWidth}px` : '100%',
+        // The drawer (mobile) spans the whole window edge-to-edge, so its content
+        // has to clear the status and navigation bars itself.
+        paddingTop: 'calc(1rem + var(--safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(1rem + var(--safe-area-inset-bottom, 0px))',
+      }}
       className={`flex h-full flex-1 flex-col p-4 relative bg-background 
         ${!base.isDragging ? '!transition-all duration-300' : 'transition-none'} 
         group/sidebar`}

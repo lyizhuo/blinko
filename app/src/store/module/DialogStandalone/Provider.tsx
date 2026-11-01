@@ -60,12 +60,14 @@ const Dialog = observer(() => {
       enter: {
         y: 0,
         opacity: 1,
-        transition: { type: 'spring', bounce: 0.5, duration: 0.6 },
+        transition: { type: 'spring' as const, bounce: 0.2, duration: 0.3 },
       },
       exit: {
-        y: -20,
+        // The mobile sheet enters from the bottom, so it must leave downwards
+        // too; the old upward exit made dialogs jump while closing.
+        y: 100,
         opacity: 0,
-        transition: { type: 'spring', bounce: 0.5, duration: 0.3 },
+        transition: { type: 'tween' as const, duration: 0.18, ease: 'easeOut' as const },
       },
     }
   };
@@ -179,34 +181,41 @@ const Dialog = observer(() => {
         }
       }}
       hideCloseButton={(size === 'full' || onlyContent) ? true : false}
-      className={`${className} ${transparent ? 'bg-transparent' : ''}`}
-      classNames={classNames}
+      className={`${className} ${transparent ? 'bg-transparent' : ''} ${size === 'full' ? 'h-full min-h-full' : ''}`}
+      scrollBehavior={onlyContent ? 'normal' : 'inside'}
+      classNames={{
+        ...classNames,
+        // The modal layer spans the whole window, so tall dialogs and the
+        // floating close button would land under the status bar.
+        wrapper: `${classNames?.wrapper ?? ''} pt-[var(--safe-area-inset-top,0px)] pb-[var(--safe-area-inset-bottom,0px)]`,
+      }}
       isDismissable={isDismissable}
       motionProps={{
         variants: {
           enter: {
             y: 0,
             opacity: 1,
-            transition: { type: 'spring', bounce: 0.5, duration: 0.6, },
+            transition: { type: 'spring' as const, bounce: 0.2, duration: 0.3 },
           },
           exit: {
-            y: -20,
+            // Phones dismiss towards the bottom edge; desktop just fades up.
+            y: isPc ? -8 : 24,
             opacity: 0,
-            transition: { type: 'spring', bounce: 0.5, duration: 0.3, },
+            transition: { type: 'tween' as const, duration: 0.16, ease: 'easeOut' as const },
           },
         }
       }}
     >
       {
         onlyContent ?
-          <ModalContent className="max-h-screen overflow-visible relative" >
+          <ModalContent className="max-h-full overflow-visible relative" >
             {
               showOnlyContentCloseButton &&
               <CloseButton onClose={() => modal.close()} />
             }
             <Content />
           </ModalContent> :
-          <ModalContent className="max-h-screen overflow-auto">
+          <ModalContent className="max-h-full overflow-auto">
             {() => (
               <>
                 {title && <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>}

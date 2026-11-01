@@ -7,6 +7,11 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.os.Build
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import org.json.JSONObject
 import com.plugin.blinko.Blinko
 
@@ -16,9 +21,13 @@ class MainActivity : TauriActivity() {
     private val blinko = Blinko()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Draw behind the system bars. Must run before super.onCreate so the
+        // window is already laid out edge-to-edge when the WebView attaches.
+        enableEdgeToEdge()
         // Apply saved theme before super.onCreate to prevent flash
         blinko.applyStartupTheme(this)
         super.onCreate(savedInstanceState)
+        applyImeInsetsToContent()
         enableWebViewBounceEffect()
         handleShortcutIntent()
         handleShareIntent()
@@ -32,6 +41,30 @@ class MainActivity : TauriActivity() {
         hasInjectedShare = false
         handleShortcutIntent()
         handleShareIntent()
+    }
+
+    /**
+     * Keeps the WebView above the soft keyboard.
+     *
+     * enableEdgeToEdge() lays the window out behind the system bars, which also
+     * stops adjustResize from shrinking the view when the IME opens: the keyboard
+     * then only covers the bottom of the page, the web layer never learns how much
+     * room it has, and dialogs end up under the keys. Reserve the IME height here
+     * and consume the insets, so the WebView cannot shrink its own visual viewport
+     * as well and the layout is reduced twice.
+     */
+    private fun applyImeInsetsToContent() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        try {
+            val content = findViewById<View>(android.R.id.content) ?: return
+            ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+                view.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
+                WindowInsetsCompat.CONSUMED
+            }
+            ViewCompat.requestApplyInsets(content)
+        } catch (e: Exception) {
+            Log.e("BlinkoApp", "Failed to apply IME insets: ${e.message}")
+        }
     }
 
     private fun enableWebViewBounceEffect() {

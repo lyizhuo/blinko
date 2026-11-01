@@ -295,6 +295,18 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the get_safe_area_insets command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-safe-area-insets",
+          "markdownDescription": "Enables the get_safe_area_insets command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_safe_area_insets command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-safe-area-insets",
+          "markdownDescription": "Denies the get_safe_area_insets command without any pre-configured scope."
+        },
+        {
           "description": "Enables the setcolor command without any pre-configured scope.",
           "type": "string",
           "const": "allow-setcolor",
@@ -307,10 +319,10 @@
           "markdownDescription": "Denies the setcolor command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-setcolor`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-setcolor`\n- `allow-get-safe-area-insets`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-setcolor`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-setcolor`\n- `allow-get-safe-area-insets`"
         }
       ]
     }

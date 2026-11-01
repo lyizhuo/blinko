@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileType } from '../Editor/type';
 import { Image } from '@heroui/react';
-import { PhotoProvider, PhotoView } from 'react-photo-view';
+import { PhotoProvider, PhotoView } from '@/components/Common/PhotoViewer';
 import { Icon } from '@/components/Common/Iconify/icons';
 import { DeleteIcon, DownloadIcon, InsertConextButton, CopyIcon } from './icons';
 import { observer } from 'mobx-react-lite';
