@@ -198,9 +198,9 @@ const Page = observer(() => {
 
       {isMobile ? (
         <div className="w-full">
-          <div className="sticky top-0 z-10 w-full">
-            <div className="mx-1 backdrop-blur-md bg-background rounded-2xl">
-              {isMobile && <div className="blinko-mobile-header-spacer"></div>}
+          <div className="sticky top-0 z-20 w-full bg-background">
+            <div className="blinko-mobile-header-spacer"></div>
+            <div className="mx-1 rounded-2xl bg-background">
               <ScrollableTabs
                 items={tabItems}
                 selectedKey={selected}

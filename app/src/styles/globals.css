@@ -396,11 +396,7 @@ a,
   flex-shrink: 0;
 }
 
-/* Translucent mobile bars; switches with the theme class on <html>. */
+/* Mobile bars are opaque so scrolling content never shows inside them. */
 :root {
-  --blinko-header-bg: #ffffff80;
-}
-
-html.dark {
-  --blinko-header-bg: #00000080;
+  --blinko-bar-bg: var(--background);
 }

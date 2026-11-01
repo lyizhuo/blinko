@@ -36,7 +36,7 @@ export const MobileNavBar = observer(({ onItemClick }: MobileNavBarProps) => {
 
   return (
     <motion.div
-      className="blinko-bottom-bar h-[60px] flex w-full px-3 py-2 gap-1 bg-background block md:hidden overflow-hidden fixed bottom-0 z-50"
+      className="blinko-bottom-bar h-[60px] flex w-full px-3 py-2 gap-1 bg-background block md:hidden overflow-hidden fixed bottom-0 z-40"
       initial={false}
       animate={{ y: isVisible ? 0 : '100%' }}
       transition={{ type: 'tween', duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
@@ -46,8 +46,7 @@ export const MobileNavBar = observer(({ onItemClick }: MobileNavBarProps) => {
         height: 'calc(60px + var(--safe-area-inset-bottom, 0px))',
         paddingBottom: 'calc(var(--safe-area-inset-bottom, 0px) + 0.5rem)',
         background: getFixedHeaderBackground(),
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)'
+        boxShadow: '0 -1px 0 color-mix(in srgb, var(--foreground) 10%, transparent)'
       }}
     >
       {mobileItems.map(i => (
