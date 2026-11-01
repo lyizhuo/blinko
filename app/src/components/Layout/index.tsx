@@ -27,12 +27,12 @@ import { useLocation, useSearchParams, Link } from 'react-router-dom';
 
 export const SideBarItem = 'p-2 flex flex-row items-center cursor-pointer gap-2 hover:bg-hover rounded-xl !transition-all';
 
-export const getFixedHeaderBackground = () => {
-  if (document?.documentElement?.classList?.contains('dark')) {
-    return '#00000080';
-  }
-  return '#ffffff80';
-};
+/**
+ * Translucent bar background. It is a CSS variable (not a DOM read) so the
+ * header and the bottom bar repaint with the theme instead of keeping the
+ * previous colour until something else triggers a re-render.
+ */
+export const getFixedHeaderBackground = () => 'var(--blinko-header-bg, #ffffff80)';
 
 export const CommonLayout = observer(({ children, header }: { children?: React.ReactNode; header?: React.ReactNode }) => {
   const [isClient, setClient] = useState(false);
