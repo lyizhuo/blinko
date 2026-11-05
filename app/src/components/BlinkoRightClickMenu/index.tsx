@@ -575,7 +575,14 @@ export const LeftCickMenu = observer(({ onTrigger, className }: { onTrigger: () 
 
   const disabledKeys = isDetailPage ? ['MutiSelectItem'] : []
 
-  return <Dropdown onOpenChange={e => onTrigger()}>
+  return <Dropdown
+    // HeroUI's popover animates with a LazyMotion scale+fade. On Android's
+    // WebView the enter/exit frames are painted before the menu background is
+    // composited, so the whole panel shows up translucent (page text bleeds
+    // through) for a frame on open and close — reported as a flash. Rendering
+    // the panel without motion makes it appear/disappear fully painted.
+    disableAnimation
+    onOpenChange={e => onTrigger()}>
     <DropdownTrigger >
       <div onClick={onTrigger} className={`${className} text-desc hover:text-primary cursor-pointer hover:scale-1.3 !transition-all`}>
         <Icon icon="fluent:more-vertical-16-regular" width="16" height="16" />
