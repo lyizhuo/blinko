@@ -35,3 +35,4 @@ target
 server/public
 tools/send_apk_config.json
 app/src-tauri/gen/android/app/tauri.properties
+local.properties
