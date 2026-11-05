@@ -156,53 +156,59 @@ jobs:
       - name: Build Android App
         run: |
           cd app
-          bun run tauri:android:build
+          bun run tauri:android:build -- --split-per-abi
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.11902837
 
-      - name: Rename Android App File
+      - name: Rename Android App Files
+        # Per-ABI splits instead of the ~90 MB universal APK: arm64 covers every
+        # current device, armeabi-v7a the older 32-bit ones, and both fit in a
+        # Telegram bot upload (50 MB limit).
         run: |
           set -euo pipefail
-          cd app/src-tauri/gen/android/app/build/outputs/apk/universal/release
-          echo "Original APK file:"
-          ls -la
-          mv app-universal-release.apk "Blinko_${VERSION}_universal.apk"
-          echo "Renamed APK file:"
-          ls -la
+          cd app/src-tauri/gen/android/app/build/outputs/apk
+          mv arm64/release/app-arm64-release.apk "arm64/release/Blinko_${VERSION}_arm64-v8a.apk"
+          mv arm/release/app-arm-release.apk "arm/release/Blinko_${VERSION}_armeabi-v7a.apk"
+          echo "Renamed APK files:"
+          ls -l arm/release arm64/release
 
       - name: Verify APK signature and package
         run: |
           set -euo pipefail
-          APK="app/src-tauri/gen/android/app/build/outputs/apk/universal/release/Blinko_${VERSION}_universal.apk"
-          test -s "$APK"
           BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
           test -x "${BT}apksigner"
-          # Fail the build if the APK is unsigned or certs unreadable.
-          "${BT}apksigner" verify --print-certs "$APK" > /tmp/apksigner-certs.txt
-          # Collect every SHA-256 digest in the output: old build-tools print colon-
-          # separated digests, new ones (34+) print plain 64-hex. Match both.
-          grep -ioE '[0-9a-f]{2}(:?[0-9a-f]{2}){31}' /tmp/apksigner-certs.txt \
-            | tr -d ':' | tr 'A-Z' 'a-z' | sort -u > /tmp/signer-digests.txt
-          test -s /tmp/signer-digests.txt
-          EXPECTED_SIGNER_SHA256="371e496a9a5427e1ae22400d9f15e47fb9daba4cf43e8f56b1b6665e48bf8697"
-          if ! grep -qx "$EXPECTED_SIGNER_SHA256" /tmp/signer-digests.txt; then
-            echo "::error::APK signer fingerprint mismatch: not signed by the blinko upload key"
-            exit 1
-          fi
-          BADGING=$("${BT}aapt" dump badging "$APK" | head -1)
-          if ! printf '%s' "$BADGING" | grep -q "^package: name='com.blinko.app'"; then
-            echo "::error::APK package mismatch: $BADGING"
-            exit 1
-          fi
-          if ! printf '%s' "$BADGING" | grep -q "versionName='${VERSION}'"; then
-            echo "::error::APK versionName mismatch: $BADGING"
-            exit 1
-          fi
-          if ! printf '%s' "$BADGING" | grep -q "versionCode='${ANDROID_VERSION_CODE}'"; then
-            echo "::error::APK versionCode mismatch: $BADGING"
-            exit 1
-          fi
-          echo "APK signature, package and version verified."
+          for APK in \
+            "app/src-tauri/gen/android/app/build/outputs/apk/arm64/release/Blinko_${VERSION}_arm64-v8a.apk" \
+            "app/src-tauri/gen/android/app/build/outputs/apk/arm/release/Blinko_${VERSION}_armeabi-v7a.apk"; do
+            test -s "$APK"
+            # Fail the build if the APK is unsigned or certs unreadable.
+            "${BT}apksigner" verify --print-certs "$APK" > /tmp/apksigner-certs.txt
+            # Collect every SHA-256 digest in the output: old build-tools print colon-
+            # separated digests, new ones (34+) print plain 64-hex. Match both.
+            grep -ioE '[0-9a-f]{2}(:?[0-9a-f]{2}){31}' /tmp/apksigner-certs.txt \
+              | tr -d ':' | tr 'A-Z' 'a-z' | sort -u > /tmp/signer-digests.txt
+            test -s /tmp/signer-digests.txt
+            EXPECTED_SIGNER_SHA256="371e496a9a5427e1ae22400d9f15e47fb9daba4cf43e8f56b1b6665e48bf8697"
+            if ! grep -qx "$EXPECTED_SIGNER_SHA256" /tmp/signer-digests.txt; then
+              echo "::error::APK signer fingerprint mismatch: not signed by the blinko upload key ($APK)"
+              exit 1
+            fi
+            BADGING=$("${BT}aapt" dump badging "$APK" | head -1)
+            if ! printf '%s' "$BADGING" | grep -q "^package: name='com.blinko.app'"; then
+              echo "::error::APK package mismatch: $BADGING"
+              exit 1
+            fi
+            if ! printf '%s' "$BADGING" | grep -q "versionName='${VERSION}'"; then
+              echo "::error::APK versionName mismatch: $BADGING"
+              exit 1
+            fi
+            if ! printf '%s' "$BADGING" | grep -q "versionCode='${ANDROID_VERSION_CODE}'"; then
+              echo "::error::APK versionCode mismatch: $BADGING"
+              exit 1
+            fi
+            echo "Verified $APK"
+          done
+          echo "APK signature, package and version verified for every ABI."
 
       - name: Upload Android App to Release
         if: github.ref_type == 'tag'
@@ -210,10 +216,14 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Blinko Android ${{ steps.version.outputs.version }}
-          files: app/src-tauri/gen/android/app/build/outputs/apk/universal/release/Blinko_${{ steps.version.outputs.version }}_universal.apk
+          files: |
+            app/src-tauri/gen/android/app/build/outputs/apk/arm64/release/Blinko_${{ steps.version.outputs.version }}_arm64-v8a.apk
+            app/src-tauri/gen/android/app/build/outputs/apk/arm/release/Blinko_${{ steps.version.outputs.version }}_armeabi-v7a.apk
           body: |
             Blinko Android ${{ steps.version.outputs.version }}
-            APK: Blinko_${{ steps.version.outputs.version }}_universal.apk
+            APKs:
+            - Blinko_${{ steps.version.outputs.version }}_arm64-v8a.apk (64-bit devices)
+            - Blinko_${{ steps.version.outputs.version }}_armeabi-v7a.apk (older 32-bit devices)
             Package: com.blinko.app
           draft: false
         env:
@@ -224,5 +234,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: blinko-android-${{ steps.version.outputs.version }}
-          path: app/src-tauri/gen/android/app/build/outputs/apk/universal/release/Blinko_${{ steps.version.outputs.version }}_universal.apk
+          path: |
+            app/src-tauri/gen/android/app/build/outputs/apk/arm64/release/Blinko_${{ steps.version.outputs.version }}_arm64-v8a.apk
+            app/src-tauri/gen/android/app/build/outputs/apk/arm/release/Blinko_${{ steps.version.outputs.version }}_armeabi-v7a.apk
           retention-days: 7
