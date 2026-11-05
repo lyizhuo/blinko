@@ -43,6 +43,16 @@
 - 2026-10-22：线上 `sortOrder` 被拖拽污染（87 条 active + 1 条回收站，值 1..29 重复三批）。已通过 `POST /api/v1/note/update-order` 全部重置为 `0`，时间线恢复。该操作不是代码补丁。
 - 注意：Prisma `updateMany` 会刷新 `updatedAt`；本次重置后这 88 条的 `updatedAt` 变为 `2026-10-22T13:02:46Z`。当前按 `createdAt` 排序，无影响。
 
+## 合并记录
+
+- 2026-11-05：`00944a7e` 合并 `upstream/main@a1c71e67`（1.8.9 安全修复版）。
+  - 保留 fork 的 CI/部署面：上游 `app-release.yml`、`build-publish-release.yml`、`translator.yml` 继续删除；`fork-arm-build.yml`、`fork-android-build.yml`、`dockerfile`、`docker-compose.prod.yml`、`deploy/` 不动；上游新增的 `security-checks.yml` 原样保留（只在 PR/手动触发）。
+  - 上游未解决、因而保留的补丁：#1（#1240 仍 OPEN）、#2、#3、#4（#1221 仍 OPEN）、#5。
+  - #4 需按上游新权限模型重放：`file.ts`/`s3file.ts` 的 HEIF 分支位于 `canReadFile`/`validAttachmentShareToken` 校验之后，响应头继承 `uploadedFileHeaders`（`private, no-store`、sandbox CSP、nosniff），`?download=true` 仍返回原始 HEIC。
+  - S3 侧跟随上游去掉二次 `decodeURIComponent`：`GetObjectCommand` 使用 `fullPath`（已在上方解码一次），HEIF 缓存键同步改为 `s3|<bucket>|<fullPath>`。
+  - 上游 `server/__tests__/security/http-files.test.ts` 的 `pathConstant` mock 补 `ROOT_PATH`，否则 `heif.ts` 在该 mock 下加载失败。
+  - `bun test` 单进程跑全部文件时，上游安全测试的 `mock.module` 会泄漏到后续用例（provider/HEIF 用例出现 “Export named ... not found”）。上游自带的 `test:security` 按文件拆进程规避；本地全量验证用 `bun test --isolate`。
+
 ## 合并上游时的检查清单
 
 ```bash
@@ -57,7 +67,9 @@ git log --oneline upstream/main..HEAD
 
 ```bash
 bun run build:web
-cd server && bun test __tests__/unit
+cd app && bun run build:web          # turbo 可能命中缓存，改目录内直跑
+cd server && bun test --isolate      # 必须 --isolate：安全测试的 mock.module 会跨文件泄漏
+cd server && bun run test:security
 ```
 
 5. 部署后复核：时间线首屏、拖拽/时间排序、时间范围筛选。

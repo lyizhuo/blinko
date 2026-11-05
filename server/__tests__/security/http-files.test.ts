@@ -17,6 +17,8 @@ const previousBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 mock.module("../../../shared/lib/pathConstant", () => ({
   UPLOAD_FILE_PATH: directory,
   TEMP_PATH: path.join(directory, "temp"),
+  // heif.ts resolves its on-disk cache through ROOT_PATH.
+  ROOT_PATH: directory,
 }));
 mock.module("../../prisma", () => ({
   prisma: {
