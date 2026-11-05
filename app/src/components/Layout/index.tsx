@@ -82,7 +82,20 @@ export const CommonLayout = observer(({ children, header }: { children?: React.R
   }
 
   return (
-    <div className={`flex w-full h-mobile-full overflow-x-hidden`} id="outer-container">
+    <div
+      className={`flex w-full h-mobile-full overflow-x-hidden`}
+      id="outer-container"
+      style={isPc ? {
+        // The desktop/tablet layout keeps the header in normal flow and has no
+        // fixed bar that could grow into the system bars, so the whole column
+        // (sidebar included) is inset here. The mobile layout instead lets the
+        // fixed header and bottom bar absorb the insets themselves.
+        paddingTop: 'var(--safe-area-inset-top, 0px)',
+        paddingRight: 'var(--safe-area-inset-right, 0px)',
+        paddingBottom: 'var(--safe-area-inset-bottom, 0px)',
+        paddingLeft: 'var(--safe-area-inset-left, 0px)',
+      } : undefined}
+    >
       <AiWritePop />
 
       <Menu style={{

@@ -272,12 +272,25 @@ function App() {
   }, []);
 
   // Keep the CSS safe-area variables in sync with the system bars (Android edge-to-edge).
+  // The activity may not have dispatched window insets yet when the WebView mounts,
+  // so retry a few times instead of trusting a first zero read.
   useEffect(() => {
-    applySafeAreaInsets();
+    let cancelled = false;
+    let attempt = 0;
+    const sync = async () => {
+      if (cancelled) return;
+      const applied = await applySafeAreaInsets();
+      if (!applied && !cancelled && attempt < 5) {
+        attempt += 1;
+        setTimeout(sync, 300 * attempt);
+      }
+    };
+    sync();
     const handleLayoutChange = () => applySafeAreaInsets();
     window.addEventListener('resize', handleLayoutChange);
     window.addEventListener('orientationchange', handleLayoutChange);
     return () => {
+      cancelled = true;
       window.removeEventListener('resize', handleLayoutChange);
       window.removeEventListener('orientationchange', handleLayoutChange);
     };
