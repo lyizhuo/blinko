@@ -44,6 +44,28 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Building Blinko Android $VERSION"
 
+      - name: Set Android release version
+        # Gradle reads tauri.android.versionCode/versionName from this generated
+        # file; without it every APK ships as versionCode 1 / versionName 1.0 and
+        # cannot update an installed build.
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = os.environ['VERSION']
+          match = re.fullmatch(r'(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?', version)
+          if not match:
+              raise SystemExit('Invalid Android release version')
+          major, minor, patch = map(int, match.groups())
+          code = major * 1_000_000 + minor * 1_000 + patch
+          if minor >= 1000 or patch >= 1000 or not 0 < code <= 2_100_000_000:
+              raise SystemExit('Android versionCode out of range')
+          Path('app/src-tauri/gen/android/app/tauri.properties').write_text(
+              f'tauri.android.versionCode={code}\ntauri.android.versionName={version}\n')
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write(f'ANDROID_VERSION_CODE={code}\n')
+          PY
+
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -172,7 +194,15 @@ jobs:
             echo "::error::APK package mismatch: $BADGING"
             exit 1
           fi
-          echo "APK signature and package verified."
+          if ! printf '%s' "$BADGING" | grep -q "versionName='${VERSION}'"; then
+            echo "::error::APK versionName mismatch: $BADGING"
+            exit 1
+          fi
+          if ! printf '%s' "$BADGING" | grep -q "versionCode='${ANDROID_VERSION_CODE}'"; then
+            echo "::error::APK versionCode mismatch: $BADGING"
+            exit 1
+          fi
+          echo "APK signature, package and version verified."
 
       - name: Upload Android App to Release
         if: github.ref_type == 'tag'
