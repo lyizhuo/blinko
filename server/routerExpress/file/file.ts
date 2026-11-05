@@ -11,6 +11,10 @@ import { getTokenFromRequest } from '../../lib/helper';
 import { FileService } from '../../lib/files';
 import { getHeifPreviewJpeg, getHeifThumbnailJpeg, isHeifPath } from '../../lib/heif';
 
+import { canReadFile, uploadedFileHeaders } from '../../lib/fileAccessPolicy';
+import { validAttachmentShareToken } from '../../lib/attachmentShare';
+import { canDownloadExport } from '../../lib/exportDownload';
+
 const router = express.Router();
 const STREAM_THRESHOLD = 5 * 1024 * 1024;
 const IMAGE_PROCESSING_TIMEOUT = 30000;
@@ -99,8 +103,9 @@ router.get(/.*/, async (req, res) => {
     const allowTemp = fullPath.includes('temp/');
     filePath = FileService.validateAndResolvePath(fullPath, UPLOAD_FILE_PATH, allowTemp);
     
-    // For temp/ paths, require authentication
-    if (allowTemp && !token) {
+    // Temp exports require both the requesting account and a scoped grant.
+    if (allowTemp && token?.role !== 'superadmin' &&
+        !await canDownloadExport(fullPath, token?.id, req.query.exportToken)) {
       return res.status(401).json({ error: "Unauthorized" });
     }
   } catch (error: any) {
@@ -130,25 +135,20 @@ router.get(/.*/, async (req, res) => {
         include: {
           note: {
             select: {
-              isShare: true,
-              accountId: true
+              id: true, isShare: true, accountId: true, isRecycle: true,
+              sharePassword: true, shareExpiryDate: true, shareEncryptedUrl: true,
+              shareMaxView: true, shareViewCount: true,
+                internalShares: {
+                  where: { accountId: Number(token?.id) || -1 },
+                  select: { accountId: true }
+                }
             }
           }
         }
       });
-      // console.log('myFile', myFile);
-
-
-      if (!token) {
-        if (myFile?.note?.isShare) {
-        } else {
-          return res.status(401).json({ error: "Unauthorized" });
-        }
-      }
-
-      if (myFile && (!myFile?.note?.isShare && Number(token?.id) != myFile?.note?.accountId && !myFile?.accountId)) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
+      if (!myFile) return res.status(404).json({ error: 'File not found' });
+      const grant = await validAttachmentShareToken(req.query.shareToken, myFile.note);
+      if (!canReadFile(myFile, token, grant)) return res.status(token ? 403 : 401).json({ error: 'Unauthorized' });
     } catch (error) {
       console.error('Error checking file permissions:', error);
       return res.status(500).json({ error: "Error checking file permissions" });
@@ -158,6 +158,8 @@ router.get(/.*/, async (req, res) => {
   if (fullPath.endsWith('.bko') && token?.role !== 'superadmin') {
     return res.status(401).json({ error: "Only superadmin can access" });
   }
+
+  res.set(uploadedFileHeaders(fullPath, mime.lookup(filePath) || 'application/octet-stream', isDownload));
 
   // filePath is already validated and resolved by FileService.validateAndResolvePath
 
@@ -182,10 +184,12 @@ router.get(/.*/, async (req, res) => {
           return res.status(304).end();
         }
 
+        // `uploadedFileHeaders` upstream already set the security headers
+        // (sandbox CSP, nosniff, no-referrer, `private, no-store`); only the
+        // converted JPEG's type and disposition differ from the stored HEIC.
         res.set({
           "Content-Type": "image/jpeg",
           "ETag": etag,
-          "Cache-Control": "public, max-age=3600",
           "Content-Disposition": "inline"
         });
         return res.send(buffer);
@@ -218,7 +222,7 @@ router.get(/.*/, async (req, res) => {
         clearTimeout(processingTimeout);
         res.set({
           "Content-Type": mime.lookup(filePath) || "image/jpeg",
-          "Cache-Control": "public, max-age=31536000",
+          "Cache-Control": "private, no-store",
           "Content-Disposition": `inline; filename="${safeFilename}"`
         });
         return res.send(thumbnail);
@@ -247,9 +251,9 @@ router.get(/.*/, async (req, res) => {
     const fallbackFilename = `file${path.extname(fullPath)}`;
 
     res.set({
-      "Content-Type": contentType,
+      "Content-Type": uploadedFileHeaders(fullPath, contentType, isDownload)['Content-Type'],
       "ETag": etag,
-      "Cache-Control": "public, max-age=3600"
+      "Cache-Control": "private, no-store"
     });
 
     if (isDownload) {
